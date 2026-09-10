@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Extreme-G: Recompiled
+Exec=/app/bin/ExtremeGRecompiled
+Type=Application
+Icon=io.github.extremegrecomp.extremegrecomp
+Categories=Game;
+Comment=Static recompilation of Extreme-G for PC.
+MimeType=x-scheme-handler/extremegrecomp

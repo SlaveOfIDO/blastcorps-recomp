@@ -1,0 +1,21 @@
+func_800E5D68
+func_800F1DE0
+func_800E2608
+
+func_800E6A08 
+
+func_8005EF40 there's a function pointer call here that seems to be executing all the functions needed to draw the menu
+
+######################### bike select screen #############################################
+
+func_800E7900 seems to be the function that draws the bike select screen
+
+func_800F11A0 background wave effect update ?
+func_800F14F0 background wave effect draw ?
+
+func_800E6A08 might be draw bike
+func_800E5D68 draw bike stats, called by func_800E6A08
+
+func_800F1DE0 white border
+
+func_80062B78 + func_80064404 + func_80062C80 draws "RIGHT BUTTON TO CUSTOMIZE CONTROLS"

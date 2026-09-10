@@ -1,0 +1,280 @@
+# Config file for Extreme G US Recompilation.
+[input]
+entrypoint = 0x8004b400
+rom = 0x800000
+# Paths are relative to the location of this config file.
+# elf_path = "extremeg.us.elf"
+symbols_file_path = "ExtremeGRecompSyms/extremeg.us.syms.toml"
+rom_file_path = "extremeg.us.uncompressed.z64"
+output_func_path = "RecompiledFuncs"
+# trace_mode = true
+
+[patches]
+stubs = [
+    "func_800761C0",
+    "func_800762F4",
+    "func_80076708",
+    "func_80076644",
+    "func_80076188",
+    "func_800762A4",
+    "func_800762C0",
+    "osPfsReSizeFile",
+    "Decompress_ClearCache",
+]
+
+ignored = [
+    "__osPfsReleasePages",
+    "__osBlockSum",
+    "__osPfsDeclearPage",
+    "__osClearPage",
+    "__osPfsSelectBank_recomp",
+]
+
+renamed = [
+
+]
+
+# Patch out break instruction
+[[patches.instruction]]
+func = "Boot_Setup"
+vram = 0x8004B978
+value = 0x03E00008 # break 1, 2 -> jr $ra
+
+# Patch osAiGetLengh
+[[patches.instruction]]
+func = "func_80058D7C"
+vram = 0x80058DE0
+value = 0x00000000 # nop
+[[patches.hook]]
+func = "func_80058D7C"
+text = "osAiGetLength_recomp(rdram, ctx); ctx->r3 = ctx->r2;"
+before_vram = 0x80058DE0
+
+# Patch out break instruction, revisit later, not sure if it hits or not
+[[patches.instruction]]
+func = "func_8004D484"
+vram = 0x8004D588
+value = 0x00000000 # nop
+
+# TU garbage fake function, should go away eventually
+[[patches.instruction]]
+func = "func_8005BA2C"
+vram = 0x8005BA2C
+value = 0x00000000 # nop
+
+# Native Framerate Option, it doesn't seem to be altering gameplay
+# 8005414B 0002
+[[patches.instruction]]
+func = "func_80053978"
+vram = 0x80054148
+value = 0x0
+[[patches.hook]]
+func = "func_80053978"
+text = "gpr temp_r2 = ctx->r2; recomp_get_native_framerate_config(rdram, ctx); ctx->r3 = ADD32(ctx->r3, ctx->r2); ctx->r2 = temp_r2;"
+before_vram = 0x80054148
+
+# hook for widescreen demo transitions
+[[patches.hook]]
+func = "func_800D9F30"
+text = "demo_widescreen_transition_fix(rdram, ctx);"
+before_vram = 0x800D9F30
+
+# hook for multiplayer controller assignment
+[[patches.hook]]
+func = "func_80068360"
+text = """
+uint32_t gameMode = (uint32_t) ctx->r7;
+switch (gameMode) {
+    case 0:
+    case 1:
+    case 2:
+        recomp_set_singleplayer_mode(rdram, ctx);
+        break;
+    case 6:
+    case 7:
+    case 8:
+        recomp_set_multiplayer_max_two_players(rdram, ctx);
+        break;
+    case 3:
+    case 4:
+    case 5:
+    case 9:
+        recomp_set_multiplayer_max_four_players(rdram, ctx);
+        break;
+}
+"""
+before_vram = 0x80068368
+
+# Fix for the menu transitions, not working very well
+# [[patches.instruction]]
+# func = "func_800E0734"
+# vram = 0x800E0AD4
+# value = 0xA4890020
+# [[patches.instruction]]
+# func = "func_800E0734"
+# vram = 0x800E0A54
+# value = 0xAC87001C
+# [[patches.instruction]]
+# func = "func_800E0734"
+# vram = 0x800E099C
+# value = 0xAC850028
+
+# Draw Distance Patches
+# 8005414B 0002 // 60 fps
+# 8106DD6A 4080 // 8006DD68
+# 8106DE36 4050 // multiplayer draw distance for P1
+# 8104C49C 4050 // multiplayer draw distance for P2 (this is data)
+# 8106EADE 4050 // patched
+# 8106EBC2 4010 // patched
+# 8106ECDA 4010 // patched
+# 8106E382 4020 // patched
+# 8106E472 4020 // patched
+# 8106E58A 4020 // patched
+# 8106E67A 4020 // patched
+
+# Fog Distance Patches
+# 8106B622 DD00 // Very Far by default
+# D117AA3A 0004 // Check amount of players
+# 8106B622 F400 // Original if 4 players
+# D117AA3A 0003 // Check amount of players
+# 8106B622 E000 // Extended if 3 players
+
+# Draw distance for the 1st player in multiplayer
+[[patches.instruction]]
+func = "func_8006DC64"
+vram = 0x8006DE34
+value = 0x3C054000
+
+# Draw distance for the 2nd player in multiplayer
+[[patches.instruction]]
+func = "func_8006DC64"
+vram = 0x8006DF28
+value = 0x3C054000
+
+# Draw Distance Patch for single player
+[[patches.instruction]]
+func = "func_8006DC64"
+vram = 0x8006DD68
+value = 0x0
+
+[[patches.hook]]
+func = "func_8006DC64"
+text = """
+gpr savedR2 = ctx->r2;
+gpr savedR5 = ctx->r5;
+gpr savedR4 = ctx->r4;
+
+recomp_get_draw_distance_config(rdram, ctx);
+if ((uint32_t) ctx->r2 == 0) { // Extended
+    ctx->r4 = S32(0X8017 << 16); // gCurrentLevel Address 0x801687A8
+    ctx->r4 = ADD32(ctx->r4, -0x7858);
+    ctx->r5 = MEM_W(ctx->r4, 0X0); // gCurrentLevel Value
+    switch ((uint32_t) ctx->r5) {
+        case 0: // DESERT_1_AZTEC_RUINS
+        case 1: // DESERT_2_BONES_AND_PIPES
+        case 2: // DESERT_3_SPACESHIP_GRAVEYARD
+        case 3: // MINES_1_THE_TUNNEL
+        case 4: // MINES_2_THE_CANYON
+        case 5: // MINES_3_THE_VOLCANO
+            ctx->r5 = savedR5;ctx->r5 = S32(0X4000 << 16); // 0x8006DD68: lui         $a1, 0x4000
+            break;
+        default:
+            ctx->r5 = savedR5;ctx->r5 = S32(0X4080 << 16); // 0x8006DD68: lui         $a1, 0x4080
+            break;
+    }
+} else if ((uint32_t) ctx->r2 == 2) { // Extreme
+    ctx->r5 = savedR5;
+    ctx->r5 = S32(0X4080 << 16); // 0x8006DD68: lui         $a1, 0x4080
+} else { // Original
+    ctx->r5 = savedR5;
+    ctx->r5 = S32(0X3F80 << 16);
+}
+ctx->r2 = savedR2;
+ctx->r4 = savedR4;
+"""
+before_vram = 0x8006DD6C
+
+# Fog distance patch, affects all players
+[[patches.instruction]]
+func = "func_8006B1AC"
+vram = 0x8006B620
+value = 0x0
+[[patches.hook]]
+func = "func_8006B1AC"
+text = """
+gpr savedR2 = ctx->r2;
+gpr savedR5 = ctx->r5; // Save registers
+gpr savedR4 = ctx->r4; // Save registers
+recomp_get_fog_distance_config(rdram, ctx);
+switch ((uint32_t) (ctx->r2)) {
+case 2: // Original
+    ctx->r5 = savedR5;ctx->r5 = ctx->r5 | 0XF400; // original
+    goto Override;
+    break;
+case 1: // Extreme
+    ctx->r5 = savedR5;ctx->r5 = ctx->r5 | 0X0000;
+    goto Override;
+    break;
+default:
+case 0:
+    goto Extended;
+    break;
+}
+Extended:
+ctx->r4 = S32(0X8017 << 16); // gCurrentLevel Address
+ctx->r4 = ADD32(ctx->r4, -0x7858); // 0x801687A8
+ctx->r5 = MEM_W(ctx->r4, 0X0); // gCurrentLevel Value
+switch ((uint32_t) ctx->r5) { 
+case 0: // DESERT_1_AZTEC_RUINS:
+case 7: // CITY_2_URBAN_MOTORWAY:
+case 4: // MINES_2_THE_CANYON:
+        ctx->r5 = savedR5;ctx->r5 = ctx->r5 | 0XEC00;
+    break;
+case 1: //DESERT_2_BONES_AND_PIPES:
+case 6: // CITY_1_INDUSTRIAL_ZONE:
+    ctx->r5 = savedR5;ctx->r5 = ctx->r5 | 0XE800;
+    break;
+case 2: // DESERT_3_SPACESHIP_GRAVEYARD:
+case 3: // MINES_1_THE_TUNNEL:
+    ctx->r5 = savedR5;ctx->r5 = ctx->r5 | 0XF400; // original
+    break;
+default:
+    ctx->r5 = savedR5;ctx->r5 = ctx->r5 | 0XDD00;
+    break;
+}
+Override:
+ctx->r4 = savedR4;
+ctx->r2 = savedR2;
+"""
+before_vram = 0x8006B624
+
+[[patches.instruction]]
+func = "func_8006DC64"
+vram = 0x8006EADC
+value = 0x3C054050
+[[patches.instruction]]
+func = "func_8006DC64"
+vram = 0x8006EBC0
+value = 0x3C054010
+[[patches.instruction]]
+func = "func_8006DC64"
+vram = 0x8006ECD8
+value = 0x3C054010
+[[patches.instruction]]
+func = "func_8006DC64"
+vram = 0x8006E380
+value = 0x3C054020
+[[patches.instruction]]
+func = "func_8006DC64"
+vram = 0x8006E470
+value = 0x3C054020
+[[patches.instruction]]
+func = "func_8006DC64"
+vram = 0x8006E588
+value = 0x3C054020
+[[patches.instruction]]
+func = "func_8006DC64"
+vram = 0x8006E678
+value = 0x3C054020
+
+
