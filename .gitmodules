@@ -7,9 +7,9 @@
 [submodule "lib/rt64"]
 	path = lib/rt64
 	url = https://github.com/rt64/rt64.git
-[submodule "ExtremeGRecompSyms"]
-	path = ExtremeGRecompSyms
-	url = https://gitlab.com/sonicdcer/ExtremeGRecompSyms.git
 [submodule "lib/ultralib"]
 	path = lib/ultralib
 	url = https://github.com/decompals/ultralib.git
+[submodule "lib/gzip-hpp"]
+	path = lib/gzip-hpp
+	url = https://github.com/mapbox/gzip-hpp.git

@@ -1,7 +1,7 @@
-# Extreme-G: Recompiled
-Extreme-G: Recompiled is a project that uses [N64: Recompiled](https://github.com/N64Recomp/N64Recomp) to **statically recompile** Extreme-G into a native port with many new features, enhancements, and extensive mod support. This project uses [RT64](https://github.com/rt64/rt64) as the rendering engine to provide graphical enhancements.
+# BlastCorps: Recompiled
+BlastCorps: Recompiled is a project that uses [N64: Recompiled](https://github.com/N64Recomp/N64Recomp) to **statically recompile** BlastCorps into a native port with many new features, enhancements, and extensive mod support. This project uses [RT64](https://github.com/rt64/rt64) as the rendering engine to provide graphical enhancements.
  
-### [Check out the latest release here](https://gitlab.com/sonicdcer/ExtremeGRecomp/-/releases).
+### [Check out the latest release here](https://github.com/SlaveOfIDO/blastcorps-recomp/-/releases).
 
 Join the [N64: Recompiled Community Discord](https://discord.gg/AWZThJ4dPf) to discuss this and other N64: Recompiled projects!
 
@@ -44,7 +44,7 @@ If you have issues with crashes on startup, make sure your graphics drivers are 
 ## Features
 
 #### Plug and Play
-Simply provide your copy of the North American 1.0 version of the game in the main menu and start playing! This project will automatically load assets from the provided copy, so there is no need to go through a separate extraction step or build the game yourself.
+Simply provide your copy of the North American 1.1 version of the game in the main menu and start playing! This project will automatically load assets from the provided copy, so there is no need to go through a separate extraction step or build the game yourself.
 
 #### Faithful Audio
 Music and sounds are perfectly faithful to the original N64 version of game, with all audio processing intact and no popping or stuttering.
@@ -74,7 +74,7 @@ Saving and loading files, going from place to place, and pausing all happen in t
 #### Linux and Steam Deck Support
 A Linux binary as well as a Flatpak is available for playing on most up-to-date distros, including on the Steam Deck.
 
-To play on Steam Deck, extract the Linux build onto your deck. Then, in desktop mode, right click the ExtremeGRecompiled executable file and select "Add to Steam". From there, you can return to Gaming mode and configure the controls as needed.
+To play on Steam Deck, extract the Linux build onto your deck. Then, in desktop mode, right click the BlastcorpsRecompiled executable file and select "Add to Steam". From there, you can return to Gaming mode and configure the controls as needed.
 
 ## Planned Features
 * Ray Tracing via RT64
@@ -88,12 +88,12 @@ Static recompilation is the process of automatically translating an application 
 Unlike N64 ports in the past, this project is not based on the source code provided by a decompilation of the game. This is because static recompilation bypasses the need for decompiled source code when making a port, allowing ports to be made **without source code**. However, the reverse engineering work done by the decompilation team was invaluable for providing some of the enhancements featured in this project. For this reason, the project uses headers and some functions from the decompilation project in order to make modifications to the game. Many thanks to the decompilation team for all of the hard work they've done.
 
 #### Where is the savefile stored?
-- Windows: `%LOCALAPPDATA%\ExtremeGRecompiled\saves`
-- Linux: `~/.config/ExtremeGRecompiled/saves`
-- macOS: `~/Library/Application Support/ExtremeGRecompiled/saves`
+- Windows: `%LOCALAPPDATA%\BlastcorpsRecompiled\saves`
+- Linux: `~/.config/BlastcorpsRecompiled/saves`
+- macOS: `~/Library/Application Support/BlastcorpsRecompiled/saves`
 
 #### How do I choose a different ROM?
-**You don't.** This project is **only** a port of Extreme-G, and it will only accept one specific ROM: the US 1.0 version of the N64 release of Extreme-G. ROMs in formats other than .z64 will be automatically converted, as long as it is the correct ROM. **This is not an emulator, and it cannot run any arbitrary ROM.**
+**You don't.** This project is **only** a port of BlastCorps, and it will only accept one specific ROM: the US 1.1 version of the N64 release of Extreme-G. ROMs in formats other than .z64 will be automatically converted, as long as it is the correct ROM. **This is not an emulator, and it cannot run any arbitrary ROM.**
 
 Instead, you can change the game by installing mods. See the [mod support](#mod-support) section for details.
 
