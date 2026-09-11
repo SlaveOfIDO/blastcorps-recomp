@@ -12760,7 +12760,7 @@ symbols = [
     { name = "D_hd_code_802C3FFC.NON_MATCHING", vram = 0x802C3FFC },
     { name = "func_hd_code_802C4070.NON_MATCHING", vram = 0x802C4070 },
     { name = "func_hd_code_802C4108.NON_MATCHING", vram = 0x802C4108 },
-    { name = "func_hd_code_802C41A8.NON_MATCHING", vram = 0x802C41A8 },
+    { name = "func_802C41A8", vram = 0x802C41A8 },
     { name = "func_hd_code_802C41C0.NON_MATCHING", vram = 0x802C41C0 },
     { name = "func_hd_code_802C42CC.NON_MATCHING", vram = 0x802C42CC },
     { name = "func_hd_code_802C4310.NON_MATCHING", vram = 0x802C4310 },

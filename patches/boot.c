@@ -1,6 +1,6 @@
 #include "patches.h"
 #include "misc_funcs.h"
-#include "sched.h"
+#include "blast_sched.h"
 
 #define VIDEO_MSG 0
 #define RSP_DONE_MSG 1
@@ -152,7 +152,6 @@ RECOMP_PATCH void __scMain(void* arg0) {
     sp30 = arg0;
     while (1) {
         osRecvMesg(&sp30->interruptQ, &sp34, OS_MESG_BLOCK);
-
         // @recomp error handling code that cheks RSP registers directly, not supported so we disable it.
         if (0 /*!(func_hd_code_802A1320() & 0x1000)*/) {
 
