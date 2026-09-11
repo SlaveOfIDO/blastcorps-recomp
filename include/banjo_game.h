@@ -6,9 +6,8 @@
 #include <vector>
 #include "recomp.h"
 
-namespace banjo {
-    std::vector<uint8_t> decompress_bk(std::span<const uint8_t> compressed_rom);
-    void bk_on_init(uint8_t* rdram, recomp_context* ctx);
+namespace blast {
+    std::vector<uint8_t> decompress(std::span<const uint8_t> compressed_rom);
 };
 
 #endif

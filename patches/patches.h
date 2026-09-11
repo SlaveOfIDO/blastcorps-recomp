@@ -21,11 +21,17 @@
 #define osSendMesg osSendMesg_recomp
 #define osRecvMesg osRecvMesg_recomp
 #define osGetCount osGetCount_recomp
+#define osCreatePiManager osCreatePiManager_recomp
+#define osCreateThread osCreateThread_recomp
+#define osStartThread osStartThread_recomp
+#define osSetThreadPri osSetThreadPri_recomp
+#define rmonPrintf rmonPrintf_recomp
 #define osCreateMesgQueue osCreateMesgQueue_recomp
 void osWriteBackDCacheAll(void);
 #define bzero bzero_recomp
 #define bcopy bcopy_recomp
 #define osDpSetStatus osDpSetStatus_recomp
+#define osDpGetStatus osDpGetStatus_recomp
 #define free free_recomp
 #define memcpy memcpy_recomp
 #define strchr strchr_recomp

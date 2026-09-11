@@ -1,10 +1,10 @@
 # Building Guide
 
-This guide will help you build the project on your local machine. The process will require you to provide a ROM of the US version of the game.
+This guide will help you build the project on your local machine. The process will require you to provide a ROM of the US Rev 1 version of the game.
 
 These steps cover: decompressing the ROM, running the recompiler and finally building the project.
 
-## 1. Clone the ExtremeGRecomp Repository
+## 1. Clone the Blastcorps Repository
 This project makes use of submodules so you will need to clone the repository with the `--recurse-submodules` flag.
 
 ```bash
@@ -36,7 +36,7 @@ choco install make
 ```
 
 ## 3. Decompressing the target ROM
-You will need to decompress the NTSC-U 1.0 N64 Extreme-G ROM (sha1: eb9b273431970a6124319a8fd125f0b2cacd8966) before running the recompiler.
+You will need to decompress the NTSC-U 1.1 N64 BlastCorps ROM (sha1: 483f7161aea39de8b45c9fbc70a2c3883c4dea8c) before running the recompiler.
 
 If your ROM isn't in .z64 format, you can byte-swap it using the [N64 ROM Byte Swapper](https://hack64.net/tools/swapper.php)
 

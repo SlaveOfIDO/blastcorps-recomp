@@ -16,6 +16,26 @@
 #include "ultramodern/config.hpp"
 #include "../lib/N64ModernRuntime/thirdparty/xxHash/xxh3.h"
 
+extern "C" void recomp_syscall_handler(uint8_t* rdram, recomp_context* ctx, int32_t instruction_vram) { /* stub */ }
+extern "C" void _osInvalICache(uint8_t* rdram, recomp_context* ctx) { /* stub */ }
+extern "C" void _osMapTLBRdb(uint8_t* rdram, recomp_context* ctx) { /* stub */
+}
+extern "C" void _osWritebackDCache(uint8_t* rdram, recomp_context* ctx) { /* stub */
+}
+extern "C" void ___osProbeTLB(uint8_t* rdram, recomp_context* ctx) { /* stub */
+}
+extern "C" void ___osGetCause(uint8_t* rdram, recomp_context* ctx) { /* stub */
+}
+extern "C" void __osGetCause_recomp(uint8_t* rdram, recomp_context* ctx) { /* stub */
+}
+extern "C" void ___osDispatchThread(uint8_t* rdram, recomp_context* ctx) { /* stub */
+}
+extern "C" void osPiRawReadIo_recomp(uint8_t* rdram, recomp_context* ctx) { /* stub */
+}
+extern "C" void __osContDataCrc_recomp(uint8_t* rdram, recomp_context* ctx) { /* stub */
+}
+
+
 extern "C" void boot_osPiRawStartDma(uint8_t* rdram, recomp_context* ctx) {
     uint32_t direction = ctx->r4;
     uint32_t device_address = ctx->r5;

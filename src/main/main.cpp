@@ -180,7 +180,7 @@ ultramodern::renderer::WindowHandle create_window(ultramodern::gfx_callbacks_t::
     flags |= SDL_WINDOW_VULKAN;
 #endif
 
-    window = SDL_CreateWindow("Extreme G: Recompiled", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1600, 900,  flags);
+    window = SDL_CreateWindow("BlastCorps: Recompiled", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1600, 900,  flags);
 
     if (window == nullptr) {
         exit_error("Failed to create window: %s\n", SDL_GetError());
@@ -387,15 +387,15 @@ gpr get_entrypoint_address();
 // array of supported GameEntry objects
 std::vector<recomp::GameEntry> supported_games = {
     {
-        .rom_hash = 0x91362405f32ee7eaULL,
-        .internal_name = "Extreme-G",
-        .display_name = "Extreme-G: Recompiled",
-        .game_id = u8"eg.n64.us",
-        .mod_game_id = "eg",
+        .rom_hash = 0xd30bc8bd3ec41ee4ULL,
+        .internal_name = "BlastCorps",
+        .display_name = "BlastCorps: Recompiled",
+        .game_id = u8"bc.n64.us",
+        .mod_game_id = "bc",
         .save_type = recomp::SaveType::None,
         .thumbnail_bytes = std::span<const char>(icon_bytes),
         .is_enabled = false,
-        .decompression_routine = nullptr,
+        .decompression_routine = blast::decompress,
         .has_compressed_code = true,
         .entrypoint_address = get_entrypoint_address(),
         .entrypoint = recomp_entrypoint,
@@ -424,7 +424,10 @@ namespace banjo {
                 }
                 break;
             case 1:
-                name += "INIT";
+                name += "THREAD1";
+                break;
+            case 3:
+                name += "THREAD3";
                 break;
             case 2:
                 name += "DEFRAG";
@@ -433,7 +436,7 @@ namespace banjo {
                 name += "AUDIO";
                 break;
             case 5:
-                name += "RESET";
+                name += "SCHED";
                 break;
             case 6:
                 name += "MAIN";

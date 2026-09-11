@@ -5,8 +5,8 @@
     {
       "type": "default",
       "project": "CMakeLists.txt",
-      "projectTarget": "ExtremeGRecompiled.exe",
-      "name": "ExtremeGRecompiled.exe",
+      "projectTarget": "BlastCorpsRecompiled.exe",
+      "name": "BlastCorpsRecompiled.exe",
       "currentDir": "${workspaceRoot}",
       "args": [
         "--show-console"

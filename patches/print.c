@@ -26,3 +26,12 @@ void rmonPrintf_recomp(const char* fmt, ...) {
 
     va_end(args);
 }
+
+RECOMP_PATCH void _osSyncPrintf(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+
+    int ret = _Printf(&proutPrintf, NULL, fmt, args);
+
+    va_end(args);
+}

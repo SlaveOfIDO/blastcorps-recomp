@@ -4,7 +4,7 @@ if (APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum OS X deployment version")
 endif()
 
-project(ExtremeGRecompiled LANGUAGES C CXX)
+project(BlastCorpsRecompiled LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -81,7 +81,25 @@ target_include_directories(RecompiledFuncs PRIVATE
 file(GLOB FUNC_C_SOURCES ${CMAKE_SOURCE_DIR}/RecompiledFuncs/*.c)
 file(GLOB FUNC_CXX_SOURCES ${CMAKE_SOURCE_DIR}/RecompiledFuncs/*.cpp)
 
-target_sources(RecompiledFuncs PRIVATE ${FUNC_C_SOURCES} ${FUNC_CXX_SOURCES})
+target_sources(RecompiledFuncs PRIVATE src/dummy.cpp ${FUNC_C_SOURCES} ${FUNC_CXX_SOURCES})
+
+
+add_custom_target(GenerateRecompiledFuncs
+    COMMAND $<TARGET_FILE:N64RecompCLI> us.v11.toml
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    DEPENDS 
+        N64RecompCLI
+        ${CMAKE_SOURCE_DIR}/baserom.us.v11.decompressed.z64
+)
+
+add_custom_target(GenerateAspMain
+    COMMAND $<TARGET_FILE:RSPRecomp> aspMain.us.v11.toml
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    DEPENDS 
+        RSPRecomp
+        ${CMAKE_SOURCE_DIR}/baserom.us.v11.decompressed.z64
+)
+
 
 # PatchesLib - Library containing the recompiled output for any custom function patches
 add_library(PatchesLib STATIC)
@@ -136,13 +154,15 @@ add_custom_command(OUTPUT
                        ${CMAKE_SOURCE_DIR}/RecompiledPatches/recomp_overlays.inl
                        ${CMAKE_SOURCE_DIR}/RecompiledPatches/funcs.h
                    # TODO: Look into why modifying patches requires two builds to take
-                   COMMAND ./N64Recomp patches.toml
+                   COMMAND $<TARGET_FILE:N64RecompCLI> patches.toml
                    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                   DEPENDS ${CMAKE_SOURCE_DIR}/patches/patches.elf
+                   DEPENDS 
+                        N64RecompCLI 
+                        ${CMAKE_SOURCE_DIR}/patches/patches.elf
 )
 
 # Main executable
-add_executable(ExtremeGRecompiled)
+add_executable(BlastCorpsRecompiled)
 
 set (SOURCES
     ${CMAKE_SOURCE_DIR}/src/main/launcher_animation.cpp
@@ -150,7 +170,8 @@ set (SOURCES
     ${CMAKE_SOURCE_DIR}/src/main/register_overlays.cpp
     ${CMAKE_SOURCE_DIR}/src/main/register_patches.cpp
     ${CMAKE_SOURCE_DIR}/src/main/theme.cpp
-
+    
+    ${CMAKE_SOURCE_DIR}/src/game/rom_decompression.cpp
     ${CMAKE_SOURCE_DIR}/src/game/config.cpp
     ${CMAKE_SOURCE_DIR}/src/game/debug.cpp
     ${CMAKE_SOURCE_DIR}/src/game/recomp_api.cpp
@@ -159,7 +180,7 @@ set (SOURCES
     ${CMAKE_SOURCE_DIR}/rsp/aspMain.cpp
 )
 
-target_include_directories(ExtremeGRecompiled PRIVATE
+target_include_directories(BlastCorpsRecompiled PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/lib/N64ModernRuntime/N64Recomp/include
     ${CMAKE_SOURCE_DIR}/lib/N64ModernRuntime/thirdparty/sse2neon
@@ -167,6 +188,7 @@ target_include_directories(ExtremeGRecompiled PRIVATE
     ${CMAKE_SOURCE_DIR}/lib/rt64/src/contrib/hlslpp/include
     ${CMAKE_SOURCE_DIR}/lib/rt64/src/contrib/dxc/inc
     ${CMAKE_SOURCE_DIR}/lib/rt64/src
+    ${CMAKE_SOURCE_DIR}/lib/gzip-hpp/include
     ${CMAKE_SOURCE_DIR}/lib/rt64/src/rhi
     ${CMAKE_SOURCE_DIR}/lib/rt64/src/render
     ${CMAKE_SOURCE_DIR}/lib/RecompFrontend/recompinput/include
@@ -183,28 +205,30 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/icon_bytes.c ${CMAKE_CURRE
     DEPENDS ${CMAKE_SOURCE_DIR}/icons/app.png
 )
 
-target_sources(ExtremeGRecompiled PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/icon_bytes.c)
+target_sources(BlastCorpsRecompiled PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/icon_bytes.c)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
-    target_compile_options(ExtremeGRecompiled PRIVATE
+    target_compile_options(BlastCorpsRecompiled PRIVATE
         -march=nehalem
         -fno-strict-aliasing
+        -msse4.1
         -fms-extensions
     )
 else()
-    target_compile_options(ExtremeGRecompiled PRIVATE
+    target_compile_options(BlastCorpsRecompiled PRIVATE
         -fno-strict-aliasing
         -fms-extensions
+        -msse4.1
     )
 endif()
 
 if (MSVC)
     # Disable identical code folding, since this breaks mod function patching as multiple functions can get merged into one.
-    target_link_options(ExtremeGRecompiled PRIVATE /OPT:NOICF)
+    target_link_options(BlastCorpsRecompiled PRIVATE /OPT:NOICF)
 elseif (APPLE)
     # Use a wrapper around ld64 that respects segprot's `max_prot` value in order
     # to make our executable memory writable (required for mod function patching)
-    target_link_options(ExtremeGRecompiled PRIVATE
+    target_link_options(BlastCorpsRecompiled PRIVATE
         "-fuse-ld=${CMAKE_SOURCE_DIR}/.github/macos/ld64"
     )
 endif()
@@ -224,23 +248,23 @@ if (WIN32)
         URL https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-devel-${SDL2_VERSION}-VC.zip
     )
     FetchContent_MakeAvailable(sdl2)
-    target_include_directories(ExtremeGRecompiled PRIVATE
+    target_include_directories(BlastCorpsRecompiled PRIVATE
         ${sdl2_SOURCE_DIR}/include
     )
-    target_link_directories(ExtremeGRecompiled PRIVATE
+    target_link_directories(BlastCorpsRecompiled PRIVATE
         ${sdl2_SOURCE_DIR}/lib/x64
     )
 
     # Copy SDL2 and dxc DLLs to output folder as post build step
-    add_custom_command(TARGET ExtremeGRecompiled POST_BUILD
+    add_custom_command(TARGET BlastCorpsRecompiled POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${sdl2_SOURCE_DIR}/lib/x64/SDL2.dll"
             "${CMAKE_SOURCE_DIR}/lib/rt64/src/contrib/dxc/bin/x64/dxil.dll"
             "${CMAKE_SOURCE_DIR}/lib/rt64/src/contrib/dxc/bin/x64/dxcompiler.dll"
-            $<TARGET_FILE_DIR:ExtremeGRecompiled>)
+            $<TARGET_FILE_DIR:BlastCorpsRecompiled>)
 
     set_target_properties(
-        ExtremeGRecompiled
+        BlastCorpsRecompiled
         PROPERTIES
             LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE"
             LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
@@ -248,19 +272,19 @@ if (WIN32)
             LINK_FLAGS_MINSIZEREL "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
     )
 
-    target_sources(ExtremeGRecompiled PRIVATE ${CMAKE_SOURCE_DIR}/icons/app.rc)
-    target_link_libraries(ExtremeGRecompiled PRIVATE SDL2 Winmm.lib)
+    target_sources(BlastCorpsRecompiled PRIVATE ${CMAKE_SOURCE_DIR}/icons/app.rc)
+    target_link_libraries(BlastCorpsRecompiled PRIVATE SDL2 Winmm.lib)
 endif()
 
 if (APPLE)
     find_package(SDL2 REQUIRED)
-    target_include_directories(ExtremeGRecompiled PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(BlastCorpsRecompiled PRIVATE ${SDL2_INCLUDE_DIRS})
 
     set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
     set(THREADS_PREFER_PTHREAD_FLAG TRUE)
     find_package(Threads REQUIRED)
 
-    target_link_libraries(ExtremeGRecompiled PRIVATE ${CMAKE_DL_LIBS} Threads::Threads SDL2::SDL2)
+    target_link_libraries(BlastCorpsRecompiled PRIVATE ${CMAKE_DL_LIBS} Threads::Threads SDL2::SDL2)
 
     include(${CMAKE_SOURCE_DIR}/.github/macos/apple_bundle.cmake)
 endif()
@@ -274,7 +298,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     message(STATUS "SDL2_FOUND = ${SDL2_FOUND}")
     message(STATUS "SDL2_INCLUDE_DIRS = ${SDL2_INCLUDE_DIRS}")
 
-    target_include_directories(ExtremeGRecompiled PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(BlastCorpsRecompiled PRIVATE ${SDL2_INCLUDE_DIRS})
 
     find_package(Freetype REQUIRED)
 
@@ -283,14 +307,28 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     message(STATUS "FREETYPE_LIBRARIES = ${FREETYPE_LIBRARIES}")
 
     include_directories(${FREETYPE_LIBRARIES})
-    target_link_libraries(ExtremeGRecompiled PRIVATE ${FREETYPE_LIBRARIES} SDL2::SDL2)
+    target_link_libraries(BlastCorpsRecompiled PRIVATE ${FREETYPE_LIBRARIES} SDL2::SDL2)
 
     set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
     set(THREADS_PREFER_PTHREAD_FLAG TRUE)
     find_package(Threads REQUIRED)
 
-    target_link_libraries(ExtremeGRecompiled PRIVATE "-latomic -static-libstdc++" ${CMAKE_DL_LIBS} Threads::Threads)
+    target_link_libraries(BlastCorpsRecompiled PRIVATE "-latomic -static-libstdc++" ${CMAKE_DL_LIBS} Threads::Threads)
 endif()
+
+### ZLIB
+
+include(FetchContent)
+
+FetchContent_Declare(
+    zlib
+    GIT_REPOSITORY https://github.com/madler/zlib.git
+    GIT_TAG v1.3.2
+)
+FetchContent_MakeAvailable(zlib)
+
+target_link_libraries(BlastCorpsRecompiled PRIVATE zlibstatic)
+target_include_directories(BlastCorpsRecompiled PRIVATE ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
 
 # TODO fix the rt64 CMake script so that this doesn't need to be duplicated here
 # For DXC
@@ -329,7 +367,7 @@ set(RECOMP_FRONTEND_RT64_PATH ${CMAKE_SOURCE_DIR}/lib/rt64)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib/RecompFrontend)
 
-target_link_libraries(ExtremeGRecompiled PRIVATE
+target_link_libraries(BlastCorpsRecompiled PRIVATE
     PatchesLib
     RecompiledFuncs
     recompui
@@ -359,8 +397,16 @@ foreach(NRM_FILE ${NRM_FILES})
     list(APPEND GENERATED_NRM_SOURCES ${OUT_C})
 endforeach()
 
-target_sources(ExtremeGRecompiled PRIVATE ${GENERATED_NRM_SOURCES})
+target_sources(BlastCorpsRecompiled PRIVATE ${GENERATED_NRM_SOURCES})
 
-target_sources(ExtremeGRecompiled PRIVATE ${SOURCES})
+target_sources(BlastCorpsRecompiled PRIVATE ${SOURCES})
 
-set_property(TARGET ExtremeGRecompiled PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+set_property(TARGET BlastCorpsRecompiled PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+add_custom_command(
+    TARGET BlastCorpsRecompiled
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/assets"
+            "$<TARGET_FILE_DIR:BlastCorpsRecompiled>/assets"
+)

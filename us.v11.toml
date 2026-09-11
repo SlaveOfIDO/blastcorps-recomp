@@ -1,0 +1,53 @@
+# Config file for BlastCorps NTSC 1.1 Recompilation.
+[input]
+entrypoint = 0x8021ED00
+symbols_file_path = "syms/blastcorps.us.v11.toml"
+rom_file_path = "baserom.us.v11.decompressed.z64"
+output_func_path = "RecompiledFuncs"
+trace_mode = true
+
+[patches]
+stubs = [
+    "func_hd_code_802D2550", # contains mtc co processor call which is unsupported and does not seem to be used
+    "_osInitialize",
+]
+
+ignored = [
+    "D_hd_code_802E53F0", # f3d text start
+    "aspMainTextStart",
+    "__hd_front_end_menu_rsp_textbin", # menu rsp
+    "___osException",
+    "_send_mesg",
+    "___osDispatchThread",
+    "_osWritebackDCache",
+    "_osInvalICache",
+    "_osMapTLBRdb",
+    "___osProbeTLB",
+    "___osGetCause",
+    "func_hd_code_802C3FC0",
+    "func_hd_code_802D3308",
+
+    "__osClearPage", # handled by pak implementation in recomp_api.cpp
+    "__osBlockSum", # handled by pak implementation in recomp_api.cpp
+    "__osPfsDeclearPage", # handled by pak implementation in recomp_api.cpp
+    "__osPfsReleasePages", # handled by pak implementation in recomp_api.cpp
+]
+
+renamed = [
+]
+
+[[patches.instruction]]
+func = "func_hd_code_8029CB04"
+vram = 0x8029CB10
+value = 0x1181000B # beq $t4, $at, .Lhd_code_8029CF40 -> beq $t4, $at, .Lhd_code_8029CB40
+
+[[patches.instruction]]
+func = "Thread3"
+vram = 0x80244CFC
+value = 0x00000000 # prevents infinite loop because thread is not yielding
+
+[[patches.instruction]]
+func = "Thread3"
+vram = 0x80245E84
+value = 0x00000000 # prevents infinite loop because thread is not yielding
+
