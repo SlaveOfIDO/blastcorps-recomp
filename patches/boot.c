@@ -8,21 +8,25 @@
 #define PRE_NMI_MSG 3
 #define RSP_STATE_SUSPENDED 3
 
+#define EXEC_IS_AUDIO 0
+#define EXEC_IS_GFX 1
+
 #define ASSERT_MESSAGE "\n\a --- ASSERTION FAULT - %s - %s, line %d\n\n"
 
 s32 func_hd_code_802A1320(void);
-void func_hd_code_802712B4(OSSched* arg0, void* arg1);
 void func_hd_code_80271E88(OSSched*);
-void func_hd_code_802712B4(OSSched*, void*);
-void func_hd_code_802712FC(OSSched*);
-void func_hd_code_80271358(OSSched*);
-void func_hd_code_802715DC(OSSched*);
-void func_hd_code_80271904(OSSched*);
+void __scHandleGfxTask(OSSched*, void*);
+void __scExecAudioIfIdle(OSSched*);
+void __scRetraceDone(OSSched*);
+void __scRspDone(OSSched*);
+void __scRdpDone(OSSched*);
+void __scExec(OSSched*, s32); /* extern */
 void func_hd_front_end_801F58E8(void);
 void func_hd_front_end_801F74B0(u8* arg0);
 void Thread1(void* arg0);
 extern u32 osDpGetStatus(void);
 void rmonPrintf(const char* arg0, ...);
+s32 func_hd_code_80271A84(OSSched*, OSScTask*); /* extern */
 extern void osInitialize(void);
 extern void osStartThread(OSThread*);
 extern void osCreateThread(OSThread*, OSId, void (*)(void*), void*, void*, OSPri);
@@ -82,6 +86,33 @@ extern s32 D_hd_code_8036BF08;
 extern s32 D_hd_code_8036BF0C;
 extern OSTimer D_hd_code_8036BF78;
 extern s32 D_hd_code_802FA254;
+extern OSMesgQueue D_hd_code_803153D8;
+extern u8 D_hd_code_8036E68C[4];
+extern OSTime D_hd_code_8036BEF0;
+extern OSTime D_hd_code_8036BEF8;
+extern OSTime D_hd_code_8036BF00;
+extern s32 D_hd_code_8036BF08;
+extern s32 D_hd_code_8036BF0C;
+extern s32 D_hd_code_8036BF10;
+extern s32 g_nextRetrace;
+extern s32 D_hd_code_8036BF18;
+extern OSScTask* g_currentRdpTask;
+extern u32 D_hd_code_8036BF20;
+extern u32 D_hd_code_8036BF24;
+extern u32 bss_pad_8036BF28;
+extern u32 D_hd_code_8036BF2C;
+extern u32 pad_8036BF30;
+extern u32 pad_8036BF34;
+extern OSTime D_hd_code_8036BF38;
+extern u64 D_hd_code_8036BF40;
+extern OSTime D_hd_code_8036BF48;
+extern u64 D_hd_code_8036BF50;
+extern u8 bss_pad_8036BF58[0x8036BF78 - 0x8036BF58];
+extern OSTimer D_hd_code_8036BF78;
+extern u8 bss_pad_8036BF98[0x8036BFB8 - 0x8036BF98];
+extern u32 D_hd_code_8036BFB8;
+extern s32 D_hd_code_8036BFBC;
+extern s8 D_hd_code_802FA270;
 
 RECOMP_PATCH void MainJump() {
     u32 sp74;
@@ -144,84 +175,62 @@ RECOMP_PATCH u32 _osPiGetStatus(void) {
 }
 
 #if 1
-RECOMP_PATCH void __scMain(void* arg0) {
-    OSMesg sp34;
-    OSSched* sp30;
-    OSScClient* sp2C;
 
-    sp30 = arg0;
+static s32 sPendingDpDone = 0;
+
+RECOMP_PATCH void __scMain(void* params) {
+    OSMesg msg;
+    OSSched* scheduler;
+    OSScClient* client;
+
+    scheduler = params;
     while (1) {
-        osRecvMesg(&sp30->interruptQ, &sp34, OS_MESG_BLOCK);
-        // @recomp error handling code that cheks RSP registers directly, not supported so we disable it.
-        if (0 /*!(func_hd_code_802A1320() & 0x1000)*/) {
+        osRecvMesg(&scheduler->interruptQ, &msg, OS_MESG_BLOCK);
 
-            for (sp2C = sp30->clientList; sp2C != NULL; sp2C = sp2C->next) {
-                osSendMesg(sp2C->msgQ, (void*) 0x29D, 0);
-            }
-            D_hd_code_8036BF10 = 1;
-            osViBlack(1U);
-            rmonPrintf("GO %x\n", osDpGetStatus());
-            osDpSetStatus(4U);
-
-            // @recomp: Comment out these IO_READ's
-            // RCP_STAT_PRINT;
-            rmonPrintf("GO %x\n", osDpGetStatus());
-            while (1) {};
-        }
-        switch ((s32) sp34 - 0x29A) {
+        switch ((s32) msg - 0x29A) {
             case VIDEO_MSG:
                 D_hd_code_8036BFB8++;
                 if ((D_hd_code_8036BFB8 % 480U) == 0) {
                     D_hd_code_8036BEF8 = D_hd_code_8036BF00;
                     D_hd_code_8036BF08 = D_hd_code_8036BF0C;
                 }
-                func_hd_code_80271358(sp30);
-                break;
-
-            case 4:
-                func_hd_code_802712FC(sp30);
-                break;
-
-            case RSP_DONE_MSG:
-                // @recomp check if we're getting sp30->curRSPTask, trying to prevent a crash if we do
-                // while informing via console, these checks should be removed once the game is fully stable.
-                if (sp30->curRSPTask != NULL) {
-                    func_hd_code_802715DC(sp30);
-                } else {
-                    rmonPrintf("NULL sp30->curRSPTask!!!!!!!!!!!   RSP   !!!!!!!!!!\n");
+                if (sPendingDpDone > 0) {
+                    sPendingDpDone--;
+                    __scRdpDone(scheduler); 
                 }
+                __scRetraceDone(scheduler);
+                break;
+            case 4:
+                __scExecAudioIfIdle(scheduler);
+                break;
+            case RSP_DONE_MSG:
+                __scRspDone(scheduler);
                 break;
             case RDP_DONE_MSG:
-                // @recomp check if we're getting sp30->curRDPTask, trying to prevent a crash if we do
-                // while informing via console, these checks should be removed once the game is fully stable.
-                if (sp30->curRDPTask != NULL) {
-                    func_hd_code_80271904(sp30);
-                } else {
-                    rmonPrintf("NULL sp30->curRDPTask!!!!!!!!!!!   RDP   !!!!!!!!!!\n");
-                }
+                sPendingDpDone++;                
                 break;
             case 5:
                 osSendMesg(D_hd_code_8036BF78.mq, D_hd_code_8036BF78.msg, 1);
                 break;
             case PRE_NMI_MSG:
-                for (sp2C = sp30->clientList; sp2C != NULL; sp2C = sp2C->next) {
-                    osSendMesg(sp2C->msgQ, (void*) 0x29D, 0);
+                for (client = scheduler->clientList; client != NULL; client = client->next) {
+                    osSendMesg(client->msgQ, (void*) 0x29D, 0);
                 }
                 D_hd_code_8036BF10 = 1;
                 osViBlack(TRUE);
                 rmonPrintf("%x\n", osDpGetStatus());
-                osDpSetStatus(4U);
-                // @recomp: Comment out these IO_READ's
-                // RCP_STAT_PRINT;
+                osDpSetStatus(DPC_CLR_FREEZE);
                 rmonPrintf("%x\n", osDpGetStatus());
-                while (1) {}
+                while (1)
+                    ;
             case 6:
                 rmonPrintf(" *** CPU FAULT *** - UNFREEZING RDP?\n");
                 while (osViGetCurrentFramebuffer() != osViGetNextFramebuffer()) {}
-                osDpSetStatus(4U);
-                while (1) {}
+                osDpSetStatus(DPC_CLR_FREEZE);
+                while (1)
+                    ;
             default:
-                func_hd_code_802712B4(sp30, sp34);
+                __scHandleGfxTask(scheduler, (OSScTask*) msg);
                 break;
         }
     }
