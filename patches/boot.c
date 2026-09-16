@@ -35,6 +35,7 @@ extern s32 boot_osPiRawStartDma(s32 direction, u32 devAddr, void* dramAddr, u32 
 extern void osSyncPrintf(const char* fmt, ...);
 extern OSTime osGetTime_recomp(void);
 void yield_self_1ms(void);
+void __scYield(OSSched* scheduler);
 extern OSMesgQueue D_hd_code_80314D80;  // bss
 extern OSMesg D_hd_code_80314D98[0xC2]; // bss
 extern s64 g_Thread3Stack[0x400];       // size 0x2000;
@@ -115,25 +116,11 @@ extern s32 D_hd_code_8036BFBC;
 extern s8 D_hd_code_802FA270;
 
 RECOMP_PATCH void MainJump() {
-    u32 sp74;
-    s32 pad[2];
-    u32* sp68;
-    u32 sp28[0x10];
-    s32 pad2[0x2];
+    // @recomp: removed osInitialize, removed debug args parsing
 
-    // This does nothing
-    // osInitialize();
-
-    // We shouldn't need this, it's some leftover arg parsing for debugging
-#if 0
-  for (sp68 = (u32*)0xFFB000, sp74 = 0; sp74 < 0x10; sp74++, sp68++) {
-    osPiRawReadIo((u32)sp68, &sp28[sp74]);
-  }
-  func_hd_code_80270AE0(sp28);
-#endif
-    // D_hd_code_802FA254 = 1;
     // @recomp: inform the runtime that we're loading a new segment
     recomp_load_overlays((u32) 0x00800000, (u32*) 0x802447C0, 0x000CAEA0);
+
     osCreateThread(&g_Thread1, 1, Thread1, NULL, g_Thread1Stack + 0x200, 0xA);
     osStartThread(&g_Thread1);
 }
@@ -168,22 +155,19 @@ RECOMP_PATCH s32 _osPiRawStartDma(s32 direction, u32 devAddr, void* dramAddr, u3
     boot_osPiRawStartDma(direction, devAddr, dramAddr, size);
 }
 
-// Since we named osPiGetStatus inside the init portion of the rom InitosPiGetStatus, we're just patching it its
+// Since we named osPiGetStatus inside the init portion of the rom _osPiGetStatus, we're just stubbing its
 // output here.
 RECOMP_PATCH u32 _osPiGetStatus(void) {
     return 0;
 }
 
-#if 1
-
 static s32 sPendingDpDone = 0;
-
 RECOMP_PATCH void __scMain(void* params) {
     OSMesg msg;
     OSSched* scheduler;
     OSScClient* client;
 
-    scheduler = params;
+    scheduler = (OSSched*)params;
     while (1) {
         osRecvMesg(&scheduler->interruptQ, &msg, OS_MESG_BLOCK);
 
@@ -196,7 +180,7 @@ RECOMP_PATCH void __scMain(void* params) {
                 }
                 if (sPendingDpDone > 0) {
                     sPendingDpDone--;
-                    __scRdpDone(scheduler); 
+                    __scRdpDone(scheduler);
                 }
                 __scRetraceDone(scheduler);
                 break;
@@ -207,7 +191,7 @@ RECOMP_PATCH void __scMain(void* params) {
                 __scRspDone(scheduler);
                 break;
             case RDP_DONE_MSG:
-                sPendingDpDone++;                
+                sPendingDpDone++;
                 break;
             case 5:
                 osSendMesg(D_hd_code_8036BF78.mq, D_hd_code_8036BF78.msg, 1);
@@ -235,23 +219,76 @@ RECOMP_PATCH void __scMain(void* params) {
         }
     }
 }
-#endif
 
-#if 1
+
+extern OSScTask D_hd_code_8036E698[5][2];
+extern u8 D_hd_code_8036E68C[4];
+extern void* D_hd_code_8036E660[6];
+extern void* D_hd_code_8036E678[5];
+extern u64 D_hd_code_80367750;
+extern Gfx* g_gfxTaskOutputBuffer;
+extern u64 D_hd_code_8036AFB0;
+extern u16 D_80000400[][320 * 240]; // framebuffers
+extern OSScClient g_gfxClient;
+extern u8 D_hd_code_8035805C; // frame double-buffer index (0/1)
+
+RECOMP_PATCH void gfxSubmitTask(Gfx* displayList, s32 displayListEntries, u8 arg2, s32 arg3, s32 gfxTaskId, s32 arg5) {
+    // @recomp: return early on line call draws. currently not supported
+    if (arg2 == 0) {
+        return;
+    }
+
+    OSScTask* gfxTask;
+    s32 displayListSize;
+
+    displayListSize = displayListEntries * sizeof(Gfx);
+    gfxTask = &D_hd_code_8036E698[arg2][D_hd_code_8035805C];
+    D_hd_code_8036E68C[(u8) arg2] = 1;
+    gfxTask->list.t.type = M_GFXTASK;
+    if ((u8) arg2 == 4) {
+        gfxTask->list.t.flags = OS_TASK_DP_WAIT;
+    } else {
+        gfxTask->list.t.flags = 0;
+    }
+    gfxTask->list.t.ucode_boot = (u64*) rspbootTextStart;
+    gfxTask->list.t.ucode_boot_size = (u32) aspMainTextStart - (u32) rspbootTextStart;
+    gfxTask->list.t.ucode = (u64*) D_hd_code_8036E660[(u8) arg2];
+    gfxTask->list.t.ucode_data = (u64*) D_hd_code_8036E678[(u8) arg2];
+    gfxTask->list.t.ucode_size = 0x1000;
+    gfxTask->list.t.ucode_data_size = 0x800;
+    gfxTask->list.t.dram_stack = &D_hd_code_80367750;
+    gfxTask->list.t.dram_stack_size = 0x400;
+    gfxTask->list.t.output_buff = (u64*) g_gfxTaskOutputBuffer;
+    gfxTask->list.t.output_buff_size = (u64*) (g_gfxTaskOutputBuffer + 0x1400);
+    gfxTask->list.t.data_ptr = (u64*) displayList;
+    gfxTask->list.t.data_size = (u32) displayListSize;
+    gfxTask->list.t.yield_data_ptr = &D_hd_code_8036AFB0;
+    gfxTask->list.t.yield_data_size = 0x900;
+    gfxTask->next = NULL;
+    gfxTask->msgQ = &D_hd_code_803153D8;
+    gfxTask->msg = (OSMesg) ((arg2 << 0x10) | gfxTaskId);
+    gfxTask->flags = OS_SC_NEEDS_RDP | OS_SC_NEEDS_RSP;
+    if ((u8) arg3 != 0) {
+        gfxTask->flags |= OS_SC_SWAPBUFFER;
+    }
+    gfxTask->framebuffer = D_80000400[D_hd_code_8035805C];
+    gfxTask->client = &g_gfxClient;
+    // @recomp: remove osWritebackDCache calls
+    osSendMesg(&sc.interruptQ, gfxTask, OS_MESG_BLOCK);
+}
+
 RECOMP_PATCH void Thread1(void* arg0) {
     osDpSetStatus(DPC_CLR_FREEZE);
     osCreatePiManager(150, &D_hd_code_80314D80, D_hd_code_80314D98, 0xC2);
     osCreateThread(&g_Thread3, 3, Thread3, arg0, (s64*) 0x80310d80 + 0x400, 0xA);
     osStartThread(&g_Thread3);
-    if (0) {
-        osStartThread(&g_Thread3);
-    }
+
+    // @recomp: remove duplicate osStartThread here
+
     osSetThreadPri(0, 0);
     while (1) {}
 }
-#endif
 
-#if 1
 RECOMP_PATCH u8 func_hd_code_8028FCD4(OSMesgQueue* arg0, u8* arg1) {
     OSContStatus sp20[4];
     s32 sp1C;
@@ -275,4 +312,3 @@ RECOMP_PATCH u8 func_hd_code_8028FCD4(OSMesgQueue* arg0, u8* arg1) {
 
     return sp20[0].errno;
 }
-#endif
