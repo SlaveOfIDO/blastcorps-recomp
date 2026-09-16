@@ -9,7 +9,7 @@ trace_mode = true
 [patches]
 stubs = [
     "func_hd_code_802D2550", # contains mtc co processor call which is unsupported and does not seem to be used
-    "_osInitialize",
+    "_osInitialize"
 ]
 
 ignored = [
@@ -27,10 +27,10 @@ ignored = [
     "func_hd_code_802C3FC0",
     "func_hd_code_802D3308",
 
-    "__osClearPage", # handled by pak implementation in recomp_api.cpp
-    "__osBlockSum", # handled by pak implementation in recomp_api.cpp
-    "__osPfsDeclearPage", # handled by pak implementation in recomp_api.cpp
-    "__osPfsReleasePages", # handled by pak implementation in recomp_api.cpp
+    "__osClearPage", 
+    "__osBlockSum", 
+    "__osPfsDeclearPage",
+    "__osPfsReleasePages", 
 ]
 
 renamed = [
@@ -40,6 +40,11 @@ renamed = [
 func = "func_hd_code_8029CB04"
 vram = 0x8029CB10
 value = 0x1181000B # beq $t4, $at, .Lhd_code_8029CF40 -> beq $t4, $at, .Lhd_code_8029CB40
+
+[[patches.instruction]]
+func = "amStartAudioThread"
+vram = 0x80267A84
+value = 0x00000000 # prevents audio from starting because it is still buggy
 
 [[patches.instruction]]
 func = "Thread3"
