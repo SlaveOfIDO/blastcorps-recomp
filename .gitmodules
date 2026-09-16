@@ -1,9 +1,9 @@
 [submodule "lib/N64ModernRuntime"]
 	path = lib/N64ModernRuntime
-	url = https://gitlab.com/sonicdcer/N64ModernRuntime.git
+	url = https://github.com/SlaveOfIDO/N64ModernRuntime.git
 [submodule "lib/RecompFrontend"]
 	path = lib/RecompFrontend
-	url = https://gitlab.com/sonicdcer/RecompFrontend.git
+	url = https://github.com/SlaveOfIDO/RecompFrontend.git
 [submodule "lib/rt64"]
 	path = lib/rt64
 	url = https://github.com/rt64/rt64.git

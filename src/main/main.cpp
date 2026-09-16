@@ -111,7 +111,7 @@ ultramodern::input::connected_device_info_t get_connected_device_info(int contro
     if ((singleplayer && controller_num == 0) || (!singleplayer && recompinput::players::get_player_is_assigned(controller_num))) {
         return ultramodern::input::connected_device_info_t{
             .connected_device = ultramodern::input::Device::Controller,
-            .connected_pak = ultramodern::input::Pak::ControllerPak,
+            .connected_pak = ultramodern::input::Pak::None,
         };
     }
 
@@ -739,7 +739,7 @@ int main(int argc, char** argv) {
         .create_render_context =
             [](uint8_t* rdram, ultramodern::renderer::WindowHandle window_handle, bool developer_mode) {
                 auto presentation_mode = ultramodern::renderer::PresentationMode::PresentEarly;
-                std::unique_ptr<recompui::renderer::RT64Context> render_context =
+                std::unique_ptr<ultramodern::renderer::RendererContext> render_context =
                     recompui::renderer::create_render_context(rdram, window_handle, presentation_mode, developer_mode);
                 return std::unique_ptr<ultramodern::renderer::RendererContext>(std::move(render_context));
             },

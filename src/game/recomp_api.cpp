@@ -34,7 +34,10 @@ extern "C" void osPiRawReadIo_recomp(uint8_t* rdram, recomp_context* ctx) { /* s
 }
 extern "C" void __osContDataCrc_recomp(uint8_t* rdram, recomp_context* ctx) { /* stub */
 }
-
+extern "C" void osPfsIsPlug_recomp(uint8_t* rdram, recomp_context* ctx) { /* stub */
+}
+extern "C" void osPfsInit_recomp(uint8_t* rdram, recomp_context* ctx) { /* stub */
+}
 
 extern "C" void boot_osPiRawStartDma(uint8_t* rdram, recomp_context* ctx) {
     uint32_t direction = ctx->r4;
