@@ -7,9 +7,10 @@
 *.elf
 *.z64
 
-# Output C files
+# Output C/C++ files
 RecompiledFuncs/
 RecompiledPatches/
+rsp/*.cpp
 
 # Linux build output
 build/
