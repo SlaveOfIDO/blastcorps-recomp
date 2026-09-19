@@ -517,3 +517,8 @@ RECOMP_PATCH u8 func_hd_code_8028FCD4(OSMesgQueue* arg0, u8* arg1) {
 
     return sp20[0].errno;
 }
+
+RECOMP_PATCH s32 func_hd_front_end_801F76E4(u8* arg0, s32 arg1) {
+    // @recomp: This is a check for the integrity of the eeprom save. We will assume that our HDDs will not fail ;)
+    return 0;
+}
