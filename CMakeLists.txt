@@ -171,7 +171,7 @@ set (SOURCES
     ${CMAKE_SOURCE_DIR}/src/main/register_patches.cpp
     ${CMAKE_SOURCE_DIR}/src/main/theme.cpp
     
-    ${CMAKE_SOURCE_DIR}/src/game/rom_decompression.cpp
+    # ${CMAKE_SOURCE_DIR}/src/game/rom_decompression.cpp # TODO: only needed when Mod support is being worked on
     ${CMAKE_SOURCE_DIR}/src/game/config.cpp
     ${CMAKE_SOURCE_DIR}/src/game/debug.cpp
     ${CMAKE_SOURCE_DIR}/src/game/recomp_api.cpp
