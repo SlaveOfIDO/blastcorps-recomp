@@ -13,3 +13,6 @@
 [submodule "lib/gzip-hpp"]
 	path = lib/gzip-hpp
 	url = https://github.com/mapbox/gzip-hpp.git
+[submodule "lib/blastcorps"]
+	path = lib/blastcorps
+	url = https://github.com/SlaveOfIDO/blastcorps.git
