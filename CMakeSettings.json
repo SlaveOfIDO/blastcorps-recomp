@@ -9,8 +9,7 @@
       "installRoot": "${projectDir}\\out\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
-      "ctestCommandArgs": "",
-      "cmakeToolchain": "C:\\Coding\\Games\\blastcorps-recomp\\clang-cl-22.cmake"
+      "ctestCommandArgs": ""
     },
     {
       "name": "x64-Release",
