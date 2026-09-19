@@ -41,10 +41,6 @@ func = "func_hd_code_8029CB04"
 vram = 0x8029CB10
 value = 0x1181000B # beq $t4, $at, .Lhd_code_8029CF40 -> beq $t4, $at, .Lhd_code_8029CB40
 
-[[patches.instruction]]
-func = "amStartAudioThread"
-vram = 0x80267A84
-value = 0x00000000 # prevents audio from starting because it is still buggy
 
 [[patches.instruction]]
 func = "Thread3"

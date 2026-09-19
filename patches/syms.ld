@@ -62,3 +62,6 @@ boot_osPiRawStartDma = 0x8F000214;
 osCreateThread_recomp = 0x8F000218;
 osStartThread_recomp = 0x8F00021C;
 osSetThreadPri_recomp = 0x8F000220;
+osAiGetLength_recomp = 0x8F000224;
+osAiSetNextBuffer_recomp = 0x8F000228;
+yield_self_1ms = 0x8F00022C;

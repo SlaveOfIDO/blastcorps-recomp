@@ -25,6 +25,8 @@
 #define osCreateThread osCreateThread_recomp
 #define osStartThread osStartThread_recomp
 #define osSetThreadPri osSetThreadPri_recomp
+#define osAiGetLength osAiGetLength_recomp
+#define osAiSetNextBuffer osAiSetNextBuffer_recomp
 #define rmonPrintf rmonPrintf_recomp
 #define osCreateMesgQueue osCreateMesgQueue_recomp
 void osWriteBackDCacheAll(void);

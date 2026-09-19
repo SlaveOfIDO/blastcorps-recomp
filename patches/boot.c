@@ -115,6 +115,25 @@ extern u32 D_hd_code_8036BFB8;
 extern s32 D_hd_code_8036BFBC;
 extern s8 D_hd_code_802FA270;
 
+
+typedef struct AudioInfo_s {
+    s16* data;
+    s16 frameSamples;
+    OSScTask task;
+} AudioInfo;
+
+typedef struct AudioManager_s {
+    void* cmdList[2];  // @recomp: stubbed
+    AudioInfo* audioInfo[3];
+    u32 numberOutputBuffers;
+    u8 audioThread[0x1C8 - 0x18]; // @recomp: stubbed
+    OSMesgQueue frameMessageQueue;
+    OSMesg frameMessageBuffer[8];
+    OSMesgQueue replyMessageQueue;
+    // @recomp: rest of the fields not included here
+} AudioManager;
+
+
 RECOMP_PATCH void MainJump() {
     // @recomp: removed osInitialize, removed debug args parsing
 
@@ -161,7 +180,141 @@ RECOMP_PATCH u32 _osPiGetStatus(void) {
     return 0;
 }
 
+void amClearDmaBuffers(void);
+extern s32 g_FrameSize;
+extern u32 g_MinFrameSize;
+extern AudioManager g_AudioManager;
+extern u32 g_AudioFrameCount;
+extern u32 g_CurrentAcmdList;
+extern s32 g_CommandLength;
+extern OSScClient g_AudioClient;
+
+#define MAX_ACMD_SIZE 2750
+#define EXTRA_SAMPLES 0x25
+RECOMP_PATCH void amHandleFrameMessage(AudioInfo* info, AudioInfo* lastInfo) {
+    s16* outBuffer;
+    Acmd* cmdlp;
+    u32 sp2C;
+    OSScTask* task;
+
+    sp2C = 0;
+    amClearDmaBuffers();
+    outBuffer = (s16*) osVirtualToPhysical(info->data);
+    if (lastInfo != NULL) {
+        osAiSetNextBuffer(lastInfo->data, lastInfo->frameSamples * 4);
+    }
+    sp2C = osAiGetLength() >> 2;
+
+    // @recomp: osAiGetLength() could be larger than the frame size, then neededSamples get below zero, which caused
+    // issues with unsigned casting
+    // TODO: better skip when neededSamples is below zero?
+    s32 neededSamples = g_FrameSize - sp2C;
+    if (neededSamples < 1)
+        neededSamples = 1;
+    info->frameSamples = ((neededSamples) + 0x10 + EXTRA_SAMPLES) & ~0xF;
+    if ((u32) info->frameSamples < (u32) g_MinFrameSize) {
+        info->frameSamples = (s16) g_MinFrameSize;
+    }
+    cmdlp = alAudioFrame(g_AudioManager.cmdList[g_CurrentAcmdList], &g_CommandLength, outBuffer, info->frameSamples);
+    if (g_CommandLength > MAX_ACMD_SIZE) {
+        rmonPrintf(ASSERT_MESSAGE, "cmdLen <= MAX_RSP_CMDS", "audio.c", 0x150);
+    }
+    task = &info->task;
+    info->task.next = NULL;
+    task->msgQ = &g_AudioManager.replyMessageQueue;
+    task->msg = (OSMesg) info;
+    task->flags = OS_SC_NEEDS_RDP;
+    task->client = &g_AudioClient;
+    task->list.t.data_ptr = (u64*) g_AudioManager.cmdList[g_CurrentAcmdList];
+    task->list.t.data_size = ((s32) ((s32) cmdlp - (s32) g_AudioManager.cmdList[g_CurrentAcmdList]) >> 3) * 8;
+    task->list.t.type = M_AUDTASK;
+    task->list.t.ucode_boot = (u64*) rspbootTextStart;
+    task->list.t.ucode_boot_size = (s32) aspMainTextStart - (s32) rspbootTextStart;
+    task->list.t.flags = 0;
+    task->list.t.ucode = (u64*) aspMainTextStart;
+    task->list.t.ucode_data = (u64*) aspMainDataStart;
+    task->list.t.ucode_data_size = 0x800;
+    task->list.t.yield_data_ptr = NULL;
+    task->list.t.yield_data_size = 0;
+
+    if (osSendMesg(&sc.cmdQ, (OSMesg) task, OS_MESG_NOBLOCK) == -1) {
+        rmonPrintf(ASSERT_MESSAGE, "osSendMesg(osScGetCmdQ(&sc), (OSMesg) t, OS_MESG_NOBLOCK)!=-1", "audio.c", 0x169);
+    }
+    g_CurrentAcmdList ^= 1;
+}
+
+void __scAppendList(OSSched*, OSScTask*); /* extern */
+s32 __scSendMesg(OSMesgQueue* messageQueue, OSMesg message, s32 flags); /* extern */
+extern u8 D_hd_code_802E8BD0;
+
+// @recomp: osGetTime()/osGetCount() counts at 46875000 ticks/sec
+#define OS_COUNTS_PER_SEC 46875000
+static u32 sLastRetraceTime = 0;
+extern u64 D_hd_code_80364A90; // Game state
+RECOMP_PATCH void __scRetraceDone(OSSched* scheduler) {
+    OSScTask* rspTask;
+    OSScClient* client;
+    s32 sp3C;
+    s32 sp38;
+
+    // @recomp: cap incrementing retrace counter to 60fps. Unsure whether this is necessary
+    OSTime elapsedTime = osGetCount() - sLastRetraceTime;
+
+    s32 retraceTargetFps = 60;
+    if (elapsedTime > OS_COUNTS_PER_SEC / retraceTargetFps) {
+        scheduler->retraceCount++;
+        if (D_hd_code_802E8BD0 == 0) {
+            scheduler->unk803156C0++;
+        }
+        sLastRetraceTime = osGetCount();
+    }
+
+    D_hd_code_8036BF38 = osGetTime();
+    if (g_currentRdpTask != NULL) {
+        osViSwapBuffer(g_currentRdpTask->framebuffer);
+        D_hd_code_8036BF18 = g_nextRetrace;
+        g_nextRetrace = scheduler->retraceCount + 1;
+        osDpSetStatus(DPC_SET_FREEZE);
+        if (g_currentRdpTask->msgQ != NULL) {
+            __scSendMesg(g_currentRdpTask->msgQ, g_currentRdpTask->msg, OS_MESG_NOBLOCK);
+        }
+        g_currentRdpTask = NULL;
+    } else {
+        if (osViGetCurrentFramebuffer() == osViGetNextFramebuffer() && (osDpGetStatus() & 2)) {
+            scheduler->unk803156C8 = osGetTime();
+            osDpSetStatus(DPC_CLR_FREEZE);
+        }
+    }
+
+
+    for (sp38 = scheduler->cmdQ.validCount, sp3C = 0; sp3C < sp38; sp3C++) {
+        if (osRecvMesg(&scheduler->cmdQ, (OSMesg*) &rspTask, OS_MESG_NOBLOCK) == -1) {
+            rmonPrintf(ASSERT_MESSAGE, "osRecvMesg(&sc->cmdQ, (OSMesg *)&rspTask, OS_MESG_NOBLOCK) != -1", "sched.c",
+                       0x1BD);
+        }
+
+        // @recomp: Ignore empty audio tasks and answer them directly as completed. Potentially not needed anymore. TODO: Need to recheck
+        if (rspTask->list.t.data_size == 0) {
+            rmonPrintf("WARNING: empty audio task received!\n");
+            osSendMesg(rspTask->msgQ, rspTask->msg, OS_MESG_NOBLOCK);
+            continue;
+        }
+
+        // @recomp: append audio task to the audio task list
+        __scAppendList(scheduler, rspTask);
+    }
+
+    for(client = scheduler->clientList; client != NULL; client = client->next) {
+        if (client->unkC == 3) {
+            // This is needed for unblocking hd_front_end pak things
+            osSendMesg(client->msgQ, (void* )0x29A, OS_MESG_NOBLOCK);
+        }
+    }
+}
+
 static s32 sPendingDpDone = 0;
+static s32 sAudioFrame = 0;
+
 RECOMP_PATCH void __scMain(void* params) {
     OSMesg msg;
     OSSched* scheduler;
@@ -183,9 +336,22 @@ RECOMP_PATCH void __scMain(void* params) {
                     __scRdpDone(scheduler);
                 }
                 __scRetraceDone(scheduler);
+
+                // @recomp: For every second retrace we tell the audio thread to prepare an audio task
+                if (sAudioFrame % 2 == 0) {     
+                    osSendMesg(&g_AudioManager.frameMessageQueue, (OSMesg) 5, OS_MESG_NOBLOCK);
+                    
+                }
+                sAudioFrame++;
+
+                // @recomp: If there is audio pending, run it. curRSP should be null
+                if (scheduler->audioListHead != NULL) {
+                    __scExecAudioIfIdle(scheduler);
+                }
+
                 break;
             case 4:
-                __scExecAudioIfIdle(scheduler);
+                // __scExecAudioIfIdle(scheduler);
                 break;
             case RSP_DONE_MSG:
                 __scRspDone(scheduler);
@@ -220,6 +386,44 @@ RECOMP_PATCH void __scMain(void* params) {
     }
 }
 
+
+static u32 sLastMainGfxWaited = 0;
+RECOMP_PATCH void gfxWaitForTask(u32 arg0) {
+    u32 sp1C;
+
+    do {
+        osRecvMesg(&D_hd_code_803153D8, (OSMesg) &sp1C, 1);
+        D_hd_code_8036E68C[sp1C >> 16] = 0;
+        sp1C &= 0xFFFF;
+        // @recomp: block here until at least 1/30s has passed since the last completed
+        // gfx task, capping the render rate at 30fps on modern hardware. This is not done
+        // when the nintendo or rare logo is rendered. This renders much faster on the N64 than the game
+        if (arg0 == 0x4D2) {
+            // Wait only for the main task.
+            s32 targetFps = 30;
+            if (D_hd_code_80364A90 == 0x10 || D_hd_code_80364A90 == 0x20) {
+                targetFps = 60;
+                // TODO: Is this the right approach?
+            }
+            while (osGetCount() - sLastMainGfxWaited < (OS_COUNTS_PER_SEC / targetFps)) {
+                yield_self_1ms();
+            }
+            sLastMainGfxWaited = osGetCount();
+        }
+
+        if (sp1C != arg0) {
+            rmonPrintf("Task %d received message %d\n", arg0, sp1C);
+        }
+    } while (sp1C != arg0);
+}
+
+// @recomp: no yielding here. Perhaps not needed anymore
+RECOMP_PATCH void __scExecAudioIfIdle(OSSched* scheduler) {
+    if (scheduler->curRSPTask == NULL) {
+        D_hd_code_8036BF00 = 0;
+        __scExec(scheduler, EXEC_IS_AUDIO);
+    }
+}
 
 extern OSScTask D_hd_code_8036E698[5][2];
 extern u8 D_hd_code_8036E68C[4];
@@ -273,7 +477,8 @@ RECOMP_PATCH void gfxSubmitTask(Gfx* displayList, s32 displayListEntries, u8 arg
     }
     gfxTask->framebuffer = D_80000400[D_hd_code_8035805C];
     gfxTask->client = &g_gfxClient;
-    // @recomp: remove osWritebackDCache calls
+
+    // @recomp: removed osWritebackDCache calls
     osSendMesg(&sc.interruptQ, gfxTask, OS_MESG_BLOCK);
 }
 
@@ -283,7 +488,7 @@ RECOMP_PATCH void Thread1(void* arg0) {
     osCreateThread(&g_Thread3, 3, Thread3, arg0, (s64*) 0x80310d80 + 0x400, 0xA);
     osStartThread(&g_Thread3);
 
-    // @recomp: remove duplicate osStartThread here
+    // @recomp: removed duplicate osStartThread here
 
     osSetThreadPri(0, 0);
     while (1) {}
