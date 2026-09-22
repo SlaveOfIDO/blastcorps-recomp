@@ -43,11 +43,15 @@ void osWriteBackDCacheAll(void);
 #define sinf sinf_recomp
 #define cosf __cosf_recomp
 #define osContGetReadData osContGetReadData_recomp
+#define osViGetNextFramebuffer osViGetNextFramebuffer_recomp
+#define osViGetCurrentFramebuffer osViGetCurrentFramebuffer_recomp
+#define osViSwapBuffer osViSwapBuffer_recomp
+#define osGetTime osGetTime_recomp
 
-#include "ultra64.h"
-#include "mbi.h"
-#include "gbi.h"
-#include "os.h"
+#include <ultra64.h>
+#include <PR/mbi.h>
+#include <PR/gbi.h>
+#include <PR/os.h>
 #include "rt64_extended_gbi.h"
 #include "graphics.h"
 

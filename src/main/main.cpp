@@ -300,7 +300,7 @@ void queue_samples(int16_t* audio_data, size_t sample_count) {
 }
 
 size_t get_frames_remaining() {
-    constexpr float buffer_offset_frames = 1.0f;
+    constexpr float buffer_offset_frames = 2.0f;
     // Get the number of remaining buffered audio bytes.
     uint64_t buffered_byte_count = SDL_GetQueuedAudioSize(audio_device);
 

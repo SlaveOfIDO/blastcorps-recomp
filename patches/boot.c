@@ -1,6 +1,9 @@
 #include "patches.h"
 #include "misc_funcs.h"
-#include "blast_sched.h"
+#include <PR/sched.h>
+#include <hd_code/macros.h>
+#include <hd_code/functions.h>
+#include <hd_code/variables.h>
 
 #define VIDEO_MSG 0
 #define RSP_DONE_MSG 1
@@ -11,10 +14,6 @@
 #define EXEC_IS_AUDIO 0
 #define EXEC_IS_GFX 1
 
-#define ASSERT_MESSAGE "\n\a --- ASSERTION FAULT - %s - %s, line %d\n\n"
-
-s32 func_hd_code_802A1320(void);
-void func_hd_code_80271E88(OSSched*);
 void __scHandleGfxTask(OSSched*, void*);
 void __scExecAudioIfIdle(OSSched*);
 void __scRetraceDone(OSSched*);
@@ -23,97 +22,33 @@ void __scRdpDone(OSSched*);
 void __scExec(OSSched*, s32); /* extern */
 void func_hd_front_end_801F58E8(void);
 void func_hd_front_end_801F74B0(u8* arg0);
-void Thread1(void* arg0);
-extern u32 osDpGetStatus(void);
-void rmonPrintf(const char* arg0, ...);
-s32 func_hd_code_80271A84(OSSched*, OSScTask*); /* extern */
-extern void osInitialize(void);
-extern void osStartThread(OSThread*);
-extern void osCreateThread(OSThread*, OSId, void (*)(void*), void*, void*, OSPri);
-s32 __osPiRawStartDma(s32 direction, u32 devAddr, void* dramAddr, u32 size);
 extern s32 boot_osPiRawStartDma(s32 direction, u32 devAddr, void* dramAddr, u32 size);
-extern void osSyncPrintf(const char* fmt, ...);
-extern OSTime osGetTime_recomp(void);
-void yield_self_1ms(void);
-void __scYield(OSSched* scheduler);
+void yield_self(void);
 extern OSMesgQueue D_hd_code_80314D80;  // bss
 extern OSMesg D_hd_code_80314D98[0xC2]; // bss
-extern s64 g_Thread3Stack[0x400];       // size 0x2000;
-
-extern void osSetThreadPri(OSThread*, OSPri);
-void Thread3(void* arg0);
-extern void osCreatePiManager(OSPri, OSMesgQueue*, OSMesg*, s32);
-extern OSMesgQueue dl_complete_queue;
-extern OSMesg dl_complete_queue_buf;
 
 extern OSThread g_Thread1;
 extern OSThread g_Thread3;
 extern u8 g_Thread1Stack[0x200];
-extern OSThread D_hd_front_end_80218D30;
 extern u8 D_hd_front_end_80218EF8[0x1000];
-extern u8 D_hd_front_end_80218740[16][0x28];
-extern u8 D_hd_front_end_802189C0[16][0x11];
-extern u8 D_hd_front_end_80218AD0[16][0x5];
-extern OSPfsState D_hd_front_end_80218B20[16];
-extern s32 D_hd_front_end_80218B20_pad;
-extern s32 D_hd_front_end_80218D24;
-extern s32 D_hd_front_end_80218D28;
-extern s32 D_hd_front_end_80218D28_pad;
-extern OSThread D_hd_front_end_80218D30;
-extern s32 D_hd_front_end_80218EF0;
-extern s32 D_hd_front_end_80218EF0_pad;
-extern u8 D_hd_front_end_80218EF8[0x1000];
-extern OSMesgQueue D_hd_front_end_80219EF8;
 extern void* D_hd_front_end_80219F10[8];
 extern OSMesgQueue D_hd_front_end_80219F30;
 extern void* D_hd_front_end_80219F48;
-extern s32 D_hd_front_end_80219F48_pad;
-extern OSMesgQueue D_hd_front_end_80219F50;
 extern void* D_hd_front_end_80219F68[8];
-extern s32 D_hd_front_end_80219F88;
-extern s32 D_hd_front_end_80219F88_pad;
-extern u8 D_hd_front_end_80219F90[0x20];
-extern u8 D_hd_front_end_80219FB0[0x20];
 extern u8 D_hd_front_end_8020C000[0x14];
-extern OSSched sc;
 extern u8 D_hd_front_end_8020C014[8];
-extern OSScClient D_hd_front_end_80218EE0;
 extern s32 D_hd_code_8036BF10;
 extern u32 D_hd_code_8036BFB8;
-extern OSTime D_hd_code_8036BEF0;
 extern OSTime D_hd_code_8036BEF8;
 extern OSTime D_hd_code_8036BF00;
 extern s32 D_hd_code_8036BF08;
 extern s32 D_hd_code_8036BF0C;
 extern OSTimer D_hd_code_8036BF78;
-extern s32 D_hd_code_802FA254;
-extern OSMesgQueue D_hd_code_803153D8;
-extern u8 D_hd_code_8036E68C[4];
-extern OSTime D_hd_code_8036BEF0;
-extern OSTime D_hd_code_8036BEF8;
-extern OSTime D_hd_code_8036BF00;
-extern s32 D_hd_code_8036BF08;
-extern s32 D_hd_code_8036BF0C;
-extern s32 D_hd_code_8036BF10;
 extern s32 g_nextRetrace;
 extern s32 D_hd_code_8036BF18;
 extern OSScTask* g_currentRdpTask;
-extern u32 D_hd_code_8036BF20;
-extern u32 D_hd_code_8036BF24;
-extern u32 bss_pad_8036BF28;
-extern u32 D_hd_code_8036BF2C;
-extern u32 pad_8036BF30;
-extern u32 pad_8036BF34;
-extern OSTime D_hd_code_8036BF38;
-extern u64 D_hd_code_8036BF40;
-extern OSTime D_hd_code_8036BF48;
-extern u64 D_hd_code_8036BF50;
-extern u8 bss_pad_8036BF58[0x8036BF78 - 0x8036BF58];
-extern OSTimer D_hd_code_8036BF78;
-extern u8 bss_pad_8036BF98[0x8036BFB8 - 0x8036BF98];
-extern u32 D_hd_code_8036BFB8;
-extern s32 D_hd_code_8036BFBC;
-extern s8 D_hd_code_802FA270;
+
+static bool sGfxTaskPending = 0;
 
 
 typedef struct AudioInfo_s {
@@ -184,7 +119,6 @@ void amClearDmaBuffers(void);
 extern s32 g_FrameSize;
 extern u32 g_MinFrameSize;
 extern AudioManager g_AudioManager;
-extern u32 g_AudioFrameCount;
 extern u32 g_CurrentAcmdList;
 extern s32 g_CommandLength;
 extern OSScClient g_AudioClient;
@@ -245,12 +179,10 @@ RECOMP_PATCH void amHandleFrameMessage(AudioInfo* info, AudioInfo* lastInfo) {
 
 void __scAppendList(OSSched*, OSScTask*); /* extern */
 s32 __scSendMesg(OSMesgQueue* messageQueue, OSMesg message, s32 flags); /* extern */
-extern u8 D_hd_code_802E8BD0;
 
 // @recomp: osGetTime()/osGetCount() counts at 46875000 ticks/sec
-#define OS_COUNTS_PER_SEC 46875000
+#define OS_COUNTS_PER_SEC 46875000U //
 static u32 sLastRetraceTime = 0;
-extern u64 D_hd_code_80364A90; // Game state
 RECOMP_PATCH void __scRetraceDone(OSSched* scheduler) {
     OSScTask* rspTask;
     OSScClient* client;
@@ -387,35 +319,47 @@ RECOMP_PATCH void __scMain(void* params) {
 }
 
 
+#if 1
 static u32 sLastMainGfxWaited = 0;
 RECOMP_PATCH void gfxWaitForTask(u32 arg0) {
     u32 sp1C;
 
+    // rmonPrintf("D_hd_code_80364A90: %llx\n", D_hd_code_80364A90);
     do {
         osRecvMesg(&D_hd_code_803153D8, (OSMesg) &sp1C, 1);
         D_hd_code_8036E68C[sp1C >> 16] = 0;
         sp1C &= 0xFFFF;
+#if 1
+        // if (D_hd_code_80364A90 == 0x10 || D_hd_code_80364A90 == 0x20 || D_hd_code_80364A90 ==  0x4000) {
+        if (D_hd_code_80364A90 & 0xC9FD0FE79BFF80B0) {
+            // targetFps = 60;
+            //  TODO: Is this the right approach?
+            goto skip;
+        }
         // @recomp: block here until at least 1/30s has passed since the last completed
         // gfx task, capping the render rate at 30fps on modern hardware. This is not done
         // when the nintendo or rare logo is rendered. This renders much faster on the N64 than the game
-        if (arg0 == 0x4D2) {
+        if (sGfxTaskPending) {
             // Wait only for the main task.
-            s32 targetFps = 30;
-            if (D_hd_code_80364A90 == 0x10 || D_hd_code_80364A90 == 0x20) {
-                targetFps = 60;
-                // TODO: Is this the right approach?
-            }
-            while (osGetCount() - sLastMainGfxWaited < (OS_COUNTS_PER_SEC / targetFps)) {
-                yield_self_1ms();
+            u32 targetFps = 35; 
+
+            while ((u32)osGetCount() - (u32)sLastMainGfxWaited < (OS_COUNTS_PER_SEC / targetFps)) {
+                yield_self();
             }
             sLastMainGfxWaited = osGetCount();
+            sGfxTaskPending = 0;
         }
+#endif
+
+    skip:
 
         if (sp1C != arg0) {
             rmonPrintf("Task %d received message %d\n", arg0, sp1C);
         }
     } while (sp1C != arg0);
 }
+#endif
+
 
 // @recomp: no yielding here. Perhaps not needed anymore
 RECOMP_PATCH void __scExecAudioIfIdle(OSSched* scheduler) {
@@ -426,15 +370,10 @@ RECOMP_PATCH void __scExecAudioIfIdle(OSSched* scheduler) {
 }
 
 extern OSScTask D_hd_code_8036E698[5][2];
-extern u8 D_hd_code_8036E68C[4];
 extern void* D_hd_code_8036E660[6];
 extern void* D_hd_code_8036E678[5];
 extern u64 D_hd_code_80367750;
-extern Gfx* g_gfxTaskOutputBuffer;
 extern u64 D_hd_code_8036AFB0;
-extern u16 D_80000400[][320 * 240]; // framebuffers
-extern OSScClient g_gfxClient;
-extern u8 D_hd_code_8035805C; // frame double-buffer index (0/1)
 
 RECOMP_PATCH void gfxSubmitTask(Gfx* displayList, s32 displayListEntries, u8 arg2, s32 arg3, s32 gfxTaskId, s32 arg5) {
     // @recomp: return early on line call draws. currently not supported
@@ -477,6 +416,9 @@ RECOMP_PATCH void gfxSubmitTask(Gfx* displayList, s32 displayListEntries, u8 arg
     }
     gfxTask->framebuffer = D_80000400[D_hd_code_8035805C];
     gfxTask->client = &g_gfxClient;
+
+    // @recomp: gfx task is pending. apply fps limiter
+    sGfxTaskPending = 1;
 
     // @recomp: removed osWritebackDCache calls
     osSendMesg(&sc.interruptQ, gfxTask, OS_MESG_BLOCK);

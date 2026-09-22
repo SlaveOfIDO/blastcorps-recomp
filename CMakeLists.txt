@@ -188,7 +188,7 @@ target_include_directories(BlastCorpsRecompiled PRIVATE
     ${CMAKE_SOURCE_DIR}/lib/rt64/src/contrib/hlslpp/include
     ${CMAKE_SOURCE_DIR}/lib/rt64/src/contrib/dxc/inc
     ${CMAKE_SOURCE_DIR}/lib/rt64/src
-    ${CMAKE_SOURCE_DIR}/lib/gzip-hpp/include
+    #${CMAKE_SOURCE_DIR}/lib/gzip-hpp/include
     ${CMAKE_SOURCE_DIR}/lib/rt64/src/rhi
     ${CMAKE_SOURCE_DIR}/lib/rt64/src/render
     ${CMAKE_SOURCE_DIR}/lib/RecompFrontend/recompinput/include
@@ -317,18 +317,18 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif()
 
 ### ZLIB
+# TODO: deactivated until mod support is needed
+# include(FetchContent)
 
-include(FetchContent)
+# FetchContent_Declare(
+#    zlib
+#    GIT_REPOSITORY https://github.com/madler/zlib.git
+#    GIT_TAG v1.3.2
+#)
+#FetchContent_MakeAvailable(zlib)
 
-FetchContent_Declare(
-    zlib
-    GIT_REPOSITORY https://github.com/madler/zlib.git
-    GIT_TAG v1.3.2
-)
-FetchContent_MakeAvailable(zlib)
-
-target_link_libraries(BlastCorpsRecompiled PRIVATE zlibstatic)
-target_include_directories(BlastCorpsRecompiled PRIVATE ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
+#target_link_libraries(BlastCorpsRecompiled PRIVATE zlibstatic)
+#target_include_directories(BlastCorpsRecompiled PRIVATE ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
 
 # TODO fix the rt64 CMake script so that this doesn't need to be duplicated here
 # For DXC
