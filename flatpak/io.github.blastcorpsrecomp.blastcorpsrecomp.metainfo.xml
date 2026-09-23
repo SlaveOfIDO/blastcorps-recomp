@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.extremegrecomp.extremegrecomp</id>
+  <id>io.github.blastcorpsrecomp.blastcorpsrecomp</id>
   
   <name>Extreme-G: Recompiled</name>
   <summary>Static recompilation of Extreme-G for PC.</summary>
@@ -25,5 +25,5 @@
     </p>
   </description>
   
-  <launchable type="desktop-id">io.github.extremegrecomp.extremegrecomp.desktop</launchable>
+  <launchable type="desktop-id">io.github.blastcorpsrecomp.blastcorpsrecomp.desktop</launchable>
 </component>

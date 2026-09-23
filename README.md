@@ -93,7 +93,7 @@ Unlike N64 ports in the past, this project is not based on the source code provi
 - macOS: `~/Library/Application Support/BlastcorpsRecompiled/saves`
 
 #### How do I choose a different ROM?
-**You don't.** This project is **only** a port of BlastCorps, and it will only accept one specific ROM: the US 1.1 version of the N64 release of Extreme-G. ROMs in formats other than .z64 will be automatically converted, as long as it is the correct ROM. **This is not an emulator, and it cannot run any arbitrary ROM.**
+**You don't.** This project is **only** a port of BlastCorps, and it will only accept one specific ROM: the US 1.1 version of the N64 release of BlastCorps. ROMs in formats other than .z64 will be automatically converted, as long as it is the correct ROM. **This is not an emulator, and it cannot run any arbitrary ROM.**
 
 Instead, you can change the game by installing mods. See the [mod support](#mod-support) section for details.
 
@@ -111,7 +111,7 @@ Building is not required to play this project, as prebuilt binaries (which do no
 * [RT64](https://github.com/rt64/rt64) for the project's rendering engine
 * [N64ModernRuntime](https://github.com/N64Recomp/N64ModernRuntime) for replacing the original N64 runtime libraries and providing mod support
 * [RecompFrontend](https://github.com/N64Recomp/RecompFrontend) for menus and input handling
-* [Extreme-G Decompilation](https://gitlab.com/sonicdcer/extreme-g) for headers and some function definitions, used for making patches or some enhancements
+* [BlastCorps Decompilation](https://github.com/SlaveOfIDO/blastcorps) for headers and some function definitions, used for making patches or some enhancements
 
 # Special Thanks:
 * [Wiseguy](https://github.com/Mr-Wiseguy) and [DarioSamo](https://github.com/DarioSamo): for creating [N64Recomp](https://github.com/N64Recomp) and [RT64](https://github.com/rt64/rt64), assisting with fantastic technical support along the way.

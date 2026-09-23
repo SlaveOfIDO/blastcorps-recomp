@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=BlastCorps: Recompiled
+Exec=/app/bin/BlastCorpsRecompiled
+Type=Application
+Icon=io.github.blastcorpsrecomp.blastcorpsrecomp
+Categories=Game;
+Comment=Static recompilation of BlastCorps for PC.
+MimeType=x-scheme-handler/blastcorpsrecomp

@@ -5,11 +5,11 @@ make -C patches CC=clang LD=ld.lld
 
 Build
 ```sh
-flatpak-builder --force-clean --user --install-deps-from=flathub --repo=repo --install builddir io.github.extremegrecomp.extremegrecomp.json
+flatpak-builder --force-clean --user --install-deps-from=flathub --repo=repo --install builddir io.github.blastcorpsrecomp.blastcorpsrecomp.json
 ```
 
 Bundle
 ```sh
-flatpak build-bundle repo io.github.extremegrecomp.extremegrecomp.flatpak io.github.extremegrecomp.extremegrecomp --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
+flatpak build-bundle repo io.github.blastcorpsrecomp.blastcorpsrecomp.flatpak io.github.blastcorpsrecomp.blastcorpsrecomp --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
 ```
 

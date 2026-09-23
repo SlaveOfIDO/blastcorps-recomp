@@ -57,8 +57,8 @@ Now that you have the required files, you must build this fork and branch of [N6
 
 After that, go back to the repository root, and run the following commands:
 ```bash
-./N64Recomp us.toml
-./RSPRecomp aspMain.us.toml
+./N64Recomp us.v11.toml
+./RSPRecomp aspMain.us.v11.toml
 ```
 
 ## 5. Building the Project
@@ -71,12 +71,12 @@ If you prefer the command line or you're on a Unix platform you can build the pr
 
 ```bash
 cmake -S . -B build-cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -G Ninja -DCMAKE_BUILD_TYPE=Release # or Debug if you want to debug
-cmake --build build-cmake --target ExtremeGRecompiled -j$(nproc) --config Release # or Debug
+cmake --build build-cmake --target BlastCorpsRecompiled -j$(nproc) --config Release # or Debug
 ```
 
 ## 6. Success
 
-Voilà! You should now have a `ExtremeGRecompiled` executable in the build directory! If you used Visual Studio this will be `out/build/x64-[Configuration]` and if you used the provided CMake commands then this will be `build-cmake`. You will need to run the executable out of the root folder of this project or copy the assets folder to the build folder to run it.
+Voilà! You should now have a `BlastCorpsRecompiled` executable in the build directory! If you used Visual Studio this will be `out/build/x64-[Configuration]` and if you used the provided CMake commands then this will be `build-cmake`. You will need to run the executable out of the root folder of this project or copy the assets folder to the build folder to run it.
 
 > [!IMPORTANT]
 > In the game itself, you should be using a standard ROM, not the decompressed one.

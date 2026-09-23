@@ -18,23 +18,23 @@ curl -sSfLO "https://github.com/linuxdeploy/linuxdeploy-plugin-gtk/raw/master/li
 chmod a+x linuxdeploy*
  
 mkdir -p AppDir/usr/bin
-cp ExtremeGRecompiled AppDir/usr/bin/
+cp BlastCorpsRecompiled AppDir/usr/bin/
 cp -r assets/ AppDir/usr/bin/
 cp recompcontrollerdb.txt AppDir/usr/bin/
-cp icons/512.png AppDir/ExtremeGRecompiled.png
-cp .github/linux/ExtremeGRecompiled.desktop AppDir/
+cp icons/512.png AppDir/BlastCorpsRecompiled.png
+cp .github/linux/BlastCorpsRecompiled.desktop AppDir/
 
 "./linuxdeploy-$LINUX_DEPLOY_ARCH.AppImage" --appimage-extract
 mv squashfs-root/ deploy
-./deploy/AppRun --appdir=AppDir/ -d AppDir/ExtremeGRecompiled.desktop -i AppDir/ExtremeGRecompiled.png -e AppDir/usr/bin/ExtremeGRecompiled --plugin gtk
+./deploy/AppRun --appdir=AppDir/ -d AppDir/BlastCorpsRecompiled.desktop -i AppDir/BlastCorpsRecompiled.png -e AppDir/usr/bin/BlastCorpsRecompiled --plugin gtk
 sed -i 's/exec/#exec/g' AppDir/AppRun
 echo 'if [ -f "portable.txt" ]; then' >> AppDir/AppRun
 echo '    APP_FOLDER_PATH=$PWD' >> AppDir/AppRun
 echo '    cd "$this_dir"/usr/bin/' >> AppDir/AppRun
-echo '    APP_FOLDER_PATH=$APP_FOLDER_PATH ./ExtremeGRecompiled' >> AppDir/AppRun
+echo '    APP_FOLDER_PATH=$APP_FOLDER_PATH ./BlastCorpsRecompiled' >> AppDir/AppRun
 echo 'else' >> AppDir/AppRun
 echo '    cd "$this_dir"/usr/bin/' >> AppDir/AppRun
-echo '    ./ExtremeGRecompiled' >> AppDir/AppRun
+echo '    ./BlastCorpsRecompiled' >> AppDir/AppRun
 echo 'fi' >> AppDir/AppRun
 
 # Remove conflicting libraries
