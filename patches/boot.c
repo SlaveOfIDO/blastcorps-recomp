@@ -324,14 +324,14 @@ static u32 sLastMainGfxWaited = 0;
 RECOMP_PATCH void gfxWaitForTask(u32 arg0) {
     u32 sp1C;
 
-    // rmonPrintf("D_hd_code_80364A90: %llx\n", D_hd_code_80364A90);
+    // rmonPrintf("g_currentGameState: %llx\n", g_currentGameState);
     do {
         osRecvMesg(&D_hd_code_803153D8, (OSMesg) &sp1C, 1);
         D_hd_code_8036E68C[sp1C >> 16] = 0;
         sp1C &= 0xFFFF;
 #if 1
-        // if (D_hd_code_80364A90 == 0x10 || D_hd_code_80364A90 == 0x20 || D_hd_code_80364A90 ==  0x4000) {
-        if (D_hd_code_80364A90 & 0xC9FD0FE79BFF80B0) {
+        // if (g_currentGameState == 0x10 || g_currentGameState == 0x20 || g_currentGameState ==  0x4000) {
+        if (g_currentGameState & 0xC9FD0FE79BFF80B0) {
             // targetFps = 60;
             //  TODO: Is this the right approach?
             goto skip;
