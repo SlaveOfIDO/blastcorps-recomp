@@ -23,6 +23,7 @@ extern u8 D_hd_code_80364A4E;
 extern u8 D_hd_code_80364A86;
 extern u8 D_hd_code_80364AC1;
 
+// @recomp: Enable extended RT64 commands in hdGameFrame
 RECOMP_PATCH Gfx* func_hd_code_8024C414(struct Model1* arg0, s32* arg1) {
     Gfx* entry;
     u8 sp194[16];
@@ -342,4 +343,82 @@ RECOMP_PATCH Gfx* func_hd_code_8024C414(struct Model1* arg0, s32* arg1) {
     func_hd_code_80259C24(&entry, arg0);
     *arg1 = (s32) (((s32) entry - (s32) arg0) - 0x48B0) >> 3;
     return entry;
+}
+
+extern u8 D_hd_code_80364AC1;
+extern u8 D_hd_code_803649EC;
+extern u8 D_hd_code_803156F5;
+// @recomp: Tag Vehicle transforms like wheels. Prevents wobbly wheels
+RECOMP_PATCH void func_hd_code_8024FC2C(Gfx** arg0, u8 arg1) {
+    Gfx* entry;
+    s32 sp60;
+    u8 pad;
+    u8 sp5E;
+    u8 sp5D;
+
+    entry = *arg0;
+
+    sp5D = D_hd_code_803649E8 == 0 && (D_hd_code_803649EC != 0 || g_currentGameState & 0x1801);
+    sp60 = 0;
+    while (&D_hd_code_80364460[sp60] != D_hd_code_803649D0) {
+        if (((D_hd_code_80364460[sp60].unk5C != 0) || (sp5D != 0)) &&
+            ((D_hd_code_80364460[sp60].unk5C != 0xFF) || (D_hd_code_803EF6FF == 0)) &&
+            ((D_hd_code_80364460[sp60].unk5C == 0xFD) || (D_hd_code_80364A84 == 0) || (D_hd_code_80364AC1 == 0))) {
+
+            // @recomp Tag the transform.
+            gEXMatrixGroupSimpleNormal(entry++, (u32) &D_hd_code_80364460[sp60] | arg1 << 24, G_EX_PUSH,
+                                       G_MTX_MODELVIEW, G_EX_EDIT_ALLOW);
+
+            gSPSegment(entry++, 0x06, osVirtualToPhysical((void*) D_hd_code_80364460[sp60].unk0));
+            if (((g_currentGameState & 0x1801)) &&
+                (((D_hd_code_80364460[sp60].unk5C == 0xFE)) || (D_hd_code_80364460[sp60].unk5C == 0))) {
+                sp5E = D_hd_code_8035805C;
+            } else {
+                sp5E = D_hd_code_803156F5;
+            }
+            if (sp5E != 0) {
+                gSPSegment(entry++, 0x07, osVirtualToPhysical((void*) D_hd_code_80364460[sp60].unk4));
+            } else {
+                gSPSegment(entry++, 0x07, osVirtualToPhysical((void*) D_hd_code_80364460[sp60].unk8));
+            }
+            gDPPipeSync(entry++);
+            gDPSetEnvColor(entry++, 0x00, 0x00, 0x00, D_hd_code_80364460[sp60].unk60);
+            gSPClearGeometryMode(entry++, 0xFFFFFFFF);
+            if ((D_hd_code_803643D6 != 0) && !(D_hd_code_80364AA8 & 0x81) &&
+                (D_hd_code_80364460[sp60].unk5C == D_hd_code_80364456)) {
+                gSPMatrix(entry++, &D_2000000.unk1500, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            }
+            if (sp5E != 0) {
+                switch (arg1) { /* switch 1; irregular */
+                    case 0:     /* switch 1 */
+                        gSPDisplayList(entry++, osVirtualToPhysical((void*) D_hd_code_80364460[sp60].unkC));
+                        break;
+                    case 1: /* switch 1 */
+                        gSPDisplayList(entry++, osVirtualToPhysical((void*) D_hd_code_80364460[sp60].unk10));
+                        break;
+                    case 2: /* switch 1 */
+                        gSPDisplayList(entry++, osVirtualToPhysical((void*) D_hd_code_80364460[sp60].unk14));
+                        break;
+                }
+            } else {
+                switch (arg1) { /* irregular */
+                    case 0:
+                        gSPDisplayList(entry++, osVirtualToPhysical((void*) D_hd_code_80364460[sp60].unk30));
+                        break;
+                    case 1:
+                        gSPDisplayList(entry++, osVirtualToPhysical((void*) D_hd_code_80364460[sp60].unk34));
+                        break;
+                    case 2:
+                        gSPDisplayList(entry++, osVirtualToPhysical((void*) D_hd_code_80364460[sp60].unk38));
+                        break;
+                }
+            }
+            gSPMatrix(entry++, &D_2000000.modelview, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+
+            // @recomp Pop the transform id.
+            gEXPopMatrixGroup(entry++, G_MTX_MODELVIEW);
+        }
+        sp60++;
+    }
+    *arg0 = entry;
 }
