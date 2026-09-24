@@ -3,9 +3,9 @@ TARGET = patches.elf
 CC      ?= clang
 LD      ?= ld.lld
 
-GBI_DEFINE := -DF3DEX_GBI
+GBI_DEFINE := -DF3D_OLD
 CFLAGS   := -target mips -mips2 -mabi=32 -O2 -G0 -mno-abicalls -mno-odd-spreg -mno-check-zero-division \
-			-fomit-frame-pointer -ffast-math -fno-unsafe-math-optimizations -fno-builtin-memset -funsigned-char -fno-builtin-sinf -fno-builtin-cosf \
+			-fno-jump-tables -fomit-frame-pointer -ffast-math -fno-unsafe-math-optimizations -fno-builtin-memset -funsigned-char -fno-builtin-sinf -fno-builtin-cosf \
 			-Wall -Wextra -Wno-incompatible-library-redeclaration -Wno-unused-parameter -Wno-unknown-pragmas -Wno-unused-variable -Wno-missing-braces -Wno-unsupported-floating-point-opt -Wno-error=incompatible-pointer-types -Werror=pointer-bool-conversion
 ASFLAGS   := -target mips -mips2 -mabi=32 -O2 -G0 -mno-abicalls -mno-odd-spreg -mno-check-zero-division
 CPPFLAGS := -nostdinc -D_LANGUAGE_C -DMIPS -I ../include -I ../lib/blastcorps/include -I ../lib/blastcorps/include/2.0D -I ../lib/blastcorps/game/src -I../lib/rt64/include -I../lib/N64ModernRuntime/ultramodern/include $(GBI_DEFINE)
