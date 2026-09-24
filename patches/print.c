@@ -35,3 +35,5 @@ RECOMP_PATCH void _osSyncPrintf(const char* fmt, ...) {
 
     va_end(args);
 }
+
+JUMPTABLE_FIX

@@ -53,9 +53,6 @@ typedef struct AudioManager_s {
 
 extern AudioManager g_AudioManager;
 
-// Do not remove this variable. N64Recomp needs at least one global variable that is exposed in the .data
-// section. else it will crash
-int sSchedJumptableFix = 1;
 
 
 static bool sGfxTaskPending = 0;
@@ -301,3 +298,5 @@ RECOMP_PATCH void gfxSubmitTask(Gfx* displayList, s32 displayListEntries, u8 arg
     // @recomp: removed osWritebackDCache calls
     osSendMesg(&sc.interruptQ, gfxTask, OS_MESG_BLOCK);
 }
+
+JUMPTABLE_FIX

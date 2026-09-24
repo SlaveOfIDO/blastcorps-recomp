@@ -5,6 +5,7 @@
 #include <hd_code/macros.h>
 #include <hd_code/functions.h>
 #include <hd_code/variables.h>
+#include <hd_code/yoshi.h>
 
 #define VIRTUAL_TO_PHYSICAL(addr) ((uintptr_t) (addr) & 0x1FFFFFFF)
 extern void* D_hd_code_8035806C;
@@ -47,11 +48,13 @@ RECOMP_PATCH Gfx* func_hd_code_8024C414(struct Model1* arg0, s32* arg1) {
     gDPSetDepthImage(entry++, (s32) D_hd_code_80358058);
     gDPSetColorImage(entry++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 320, (s32) D_hd_code_80358058);
     gDPSetFillColor(entry++, 0xFFFCFFFC);
-    gDPFillRectangle(entry++, 0, 0, 319, 239);
+    // @recomp: make rectangle fill whole frame
+    gDPFillRectangle(entry++, 0, 0, 320, 240);
 
     guTranslate(&arg0->modelview, 0.f, 0.f, 0.f);
-    guOrtho(&arg0->mtx1, 0, 319.f, 239.f, 0.0f, -20000.0f, 20000.0f, 1.0f);
-    guOrtho(&arg0->mtx2, 0, 1279.f, 959.f, 0.0f, -20000.0f, 20000.0f, 1.0f);
+    // @recomp: make both orthos fill the whole frame
+    guOrtho(&arg0->mtx1, 0, 320.f, 240.f, 0.0f, -20000.0f, 20000.0f, 1.0f);
+    guOrtho(&arg0->mtx2, 0, 1280.f, 960.f, 0.0f, -20000.0f, 20000.0f, 1.0f);
     func_hd_code_802507C8(&arg0->projection2, &arg0->lookAt, &arg0->unk180);
 
     gDPSetColorImage(entry++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 320, D_hd_code_80358050[D_hd_code_8035805C]);
@@ -76,7 +79,8 @@ RECOMP_PATCH Gfx* func_hd_code_8024C414(struct Model1* arg0, s32* arg1) {
     }
     gDPPipeSync(entry++);
 
-    gDPFillRectangle(entry++, 0, (sp180 < 1 ? 0 : (sp180 - 1)), 319, 239);
+    // @recomp: make rectangle fill whole frame
+    gDPFillRectangle(entry++, 0, (sp180 < 1 ? 0 : (sp180 - 1)), 320, 240);
     gDPPipeSync(entry++);
 
     gSPLookAt(entry++, &D_2000000.lookAt);
@@ -543,3 +547,235 @@ RECOMP_PATCH void func_hd_code_80282C80(Gfx** gfx, struct Model1* arg1, s32 arg2
     }
     *gfx = entry;
 }
+
+// @recomp: white-out fade is not full-screen. fixed this by tagging this
+RECOMP_PATCH void func_hd_code_8025E67C(Gfx** arg0, struct Model1* arg1, u8 arg2) {
+    Gfx* entry;
+    u32 sp60;
+    u32 sp5C;
+    u32 sp58;
+    u32 pad54;
+    u32 sp50;
+
+    entry = *arg0;
+    sp60 = sc.retraceCount;
+    if (D_hd_code_803643D6 != 0) {
+        if (D_hd_code_803643D8 == 0) {
+            sndDeactivateAllSfxByFlag_1();
+            func_hd_code_802C1DD0(D_hd_code_802E8F94[g_currentLevel].unk0 == 0x20 ||
+                                  D_hd_code_802E8F94[g_currentLevel].unk0 == 0x80);
+            switch (g_currentLevel) { /* switch 1; irregular */
+                case 49:              /* switch 1 */
+                    sndPlaySfx(D_hd_code_80367738, 0x31U, NULL);
+                    func_hd_code_80261570(0.0f);
+                    break;
+                case 50: /* switch 1 */
+                    D_hd_code_8036BB1A = -1;
+                    func_hd_code_8026AF6C(0xA00EU);
+                    func_hd_code_80261570(0.0f);
+                    break;
+                default: /* switch 1 */
+                    sndPlaySfx(D_hd_code_80367738, 0x31U, NULL);
+                    D_hd_code_802E8BD8 = 1;
+                    if ((D_hd_code_8036BB18 != -1) || (func_hd_code_8026B10C() != 0)) {
+                        func_hd_code_8026AF6C(0x4000U);
+                    }
+                    D_hd_code_8036BB1A = -1;
+                    func_hd_code_80261570(0.0f);
+                    break;
+            }
+            D_hd_code_80366BB8 = sp60;
+            D_hd_code_80366BC4.unk1 = 0U;
+        }
+        sp5C = sp60 - D_hd_code_80366BB8;
+        if (sp5C >= 0xB4U) {
+            switch (g_currentLevel) { /* switch 2; irregular */
+                case 49:              /* switch 2 */
+                    if (D_hd_code_80366BC4.unk1 == 0) {
+                        sndPlaySfx(D_hd_code_80367738, 0x32U, NULL);
+                        D_hd_code_80366BC4.unk1 = 1U;
+                    }
+                    break;
+                case 50: /* switch 2 */
+                    if ((D_hd_code_8036BB1C == 1) && (areWeFading() == 0)) {
+                        if ((((s32) players[playerNumber].unk18[g_currentLevel] > 0) &&
+                                     ((s32) players[playerNumber].unk18[g_currentLevel] < 6)
+                                 ? 1
+                                 : 0) != 0) {
+                            func_hd_code_80275390(0x08000000);
+                        } else {
+                            func_hd_code_80275390(0x40);
+                        }
+                    }
+                    break;
+                default: /* switch 2 */
+                    if (D_hd_code_80366BC4.unk1 == 0) {
+                        sndPlaySfx(D_hd_code_80367738, 0x32U, NULL);
+                        D_hd_code_80366BC4.unk1 = 1U;
+                    }
+
+                    gEXMatrixGroupSkipAllAspect(entry++, TAG_FADE_SCREEN, G_EX_PUSH, G_MTX_PROJECTION, G_EX_EDIT_ALLOW,
+                                                G_EX_ASPECT_STRETCH); // @recomp: force stretching
+                    
+                    gSPMatrix(entry++, &D_2000000.mtx1, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+                    gSPMatrix(entry++, &D_2000000.modelview, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+                    gDPPipeSync(entry++);
+                    gDPSetRenderMode(entry++, G_RM_CLD_SURF, G_RM_CLD_SURF2);
+                    gDPSetCombineMode(entry++, G_CC_SHADE, G_CC_SHADE);
+                    gSPSetGeometryMode(entry++, G_SHADE | G_SHADING_SMOOTH);
+                    gSPTexture(entry++, qu016(0.999985), qu016(0.999985), 0, G_TX_RENDERTILE, G_OFF);
+                    gSPVertex(entry++, OS_PHYSICAL_TO_K0(&D_hd_code_802FA8B0[arg2]), 4, 0);
+                    gSP1Triangle(entry++, 0, 1, 2, 0);
+                    gSP1Triangle(entry++, 0, 2, 3, 0);
+                    gDPPipeSync(entry++);
+                    gEXPopMatrixGroup(entry++, G_MTX_PROJECTION); // @recomp: reset stretching
+
+
+                    if (!areWeFading()) {
+                        if ((sp60 - D_hd_code_80366BB8) - 0xB4 < 0x5AU) {
+                            sp50 = (u32) (((sp60 - D_hd_code_80366BB8) - 0xB4) * 2.8333333333333335);
+                            for (sp5C = 0; sp5C < 4U; sp5C++) {
+                                for (sp58 = 0; sp58 < 4U; sp58++) {
+                                    D_hd_code_802FA8B0[arg2].v[sp5C].v.cn[sp58] = sp50;
+                                }
+                            }
+                        } else if ((u32) ((sp60 - D_hd_code_80366BB8) - 0x10E) >= 0x2EU) {
+                            if ((g_currentGameState == 0x100000000000)) {
+                                g_nextGameState = 0x200000000000;
+                            } else {
+                                if ((((s32) players[playerNumber].unk18[g_currentLevel] > 0) &&
+                                     ((s32) players[playerNumber].unk18[g_currentLevel] < 6))
+                                        ? 1
+                                        : 0 != 0) {
+                                    func_hd_code_80275390(0x08000000);
+                                } else {
+                                    func_hd_code_80275390(0x40);
+                                }
+                            }
+                        } else {
+                            for (sp5C = 0; sp5C < 4U; sp5C++) {
+                                for (sp58 = 0; sp58 < 4U; sp58++) {
+                                    D_hd_code_802FA8B0[arg2].v[sp5C].v.cn[sp58] = 0xFF;
+                                }
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+    *arg0 = entry;
+}
+
+extern u16 D_hd_code_802FA8A0[2];
+extern f32 D_hd_code_8036BFC0;
+extern u8 D_hd_code_8036BFC4;
+extern u8 D_hd_code_8036BFC5;
+extern f32 D_hd_code_8036BFC8;
+extern f32 D_hd_code_8036BFCC;
+extern f32 D_hd_code_8036BFD0;
+extern Vtx D_hd_code_802FA820[2][4];
+extern struct S_802FA280 D_hd_code_802FA280[60][2];
+#define qu102(n) ((u16) ((n) * 0x0004))
+// @recomp: The sky-quad (yes no skybox) is tied to 4:3 ratio. This code fixes it for all aspect ratios
+RECOMP_PATCH Gfx* func_hd_code_80271FD0(Gfx* arg0, struct Model1* arg1, u16 arg2, s16 arg3, s16 arg4, s32* arg5) {
+    Gfx* entry = arg0;
+    INIT_FROM_ARRAY(u16 sp78[2], sp78, D_hd_code_802FA8A0);
+    s32 sp74;
+    struct S_802FA280* sp70;
+    f32 sp6C;
+    f32 sp68;
+    f32 sp64;
+    f32 sp60;
+    f32 sp5C;
+
+    // @recomp: get aspect ratio
+    f32 ratio = recomp_get_target_aspect_ratio(4.0f/3.0f);
+    f32 offset = ((ratio * 960.0f) - 1280.0f) / 1280.0f;
+
+
+    if (D_hd_code_8036BFC4 == 0) {
+        *arg5 = 0;
+        return entry;
+    }
+    sp6C = (120.0 - ((f32) arg4 * 0.22)) + D_hd_code_8036BFC0;
+
+    D_hd_code_8036BFCC = MAX(0.0, sp6C);
+    D_hd_code_8036BFD0 = MAX(0.0, -sp6C);
+
+    *arg5 = D_hd_code_8036BFCC;
+    if (*arg5 <= 0) {
+        return entry;
+    }
+    D_hd_code_8036BFC8 = ((arg3 - 2048.0) * 0.5);
+
+    D_hd_code_802FA820[D_hd_code_8036BFC5][2].v.ob[1] = (D_hd_code_8036BFCC * 4.0) - 1.0;
+    D_hd_code_802FA820[D_hd_code_8036BFC5][3].v.ob[1] = (D_hd_code_8036BFCC * 4.0) - 1.0;
+
+    // @recomp: calculate new skybox sizes
+    D_hd_code_802FA820[D_hd_code_8036BFC5][0].v.ob[0] = -offset * 1280;
+    D_hd_code_802FA820[D_hd_code_8036BFC5][1].v.ob[0] = 1280 + offset * 1280;
+    D_hd_code_802FA820[D_hd_code_8036BFC5][2].v.ob[0] = -offset * 1280.0f;
+    D_hd_code_802FA820[D_hd_code_8036BFC5][3].v.ob[0] = 1280 + offset * 1280;
+
+
+    gSPClearGeometryMode(entry++, -1);
+    gSPSetGeometryMode(entry++, G_SHADE | G_SHADING_SMOOTH);
+    gSPTexture(entry++, qu016(0.5), qu016(0.5), 0, G_TX_RENDERTILE, G_ON);
+    gDPPipeSync(entry++);
+    gDPSetCombineLERP(entry++, TEXEL1, TEXEL0, TEXEL1_ALPHA, TEXEL0, TEXEL1, TEXEL0, TEXEL0, TEXEL0, 0, 0, 0, COMBINED,
+                      0, 0, 0, COMBINED);
+    gDPSetCycleType(entry++, G_CYC_2CYCLE);
+    gDPSetRenderMode(entry++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
+    gDPSetTextureFilter(entry++, G_TF_BILERP);
+
+    for (sp74 = 0; sp74 < 2; sp74++) {
+        sp70 = &D_hd_code_802FA280[arg2][sp74];
+
+        gDPSetTextureImage(entry++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, sp70->unk4);
+        gDPTileSync(entry++);
+        gDPSetTile(entry++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 0, sp74 << 8, G_TX_LOADTILE, 0, G_TX_NOMIRROR | G_TX_WRAP,
+                   G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD);
+        gDPLoadSync(entry++);
+        gDPLoadBlock(entry++, G_TX_LOADTILE, 0, 0, 1023, 256);
+    }
+
+    gSPMatrix(entry++, OS_PHYSICAL_TO_K0(&arg1->mtx2), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+    gSPMatrix(entry++, OS_PHYSICAL_TO_K0(&arg1->modelview), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gDPTileSync(entry++);
+    gDPSetTextureLOD(entry++, G_TL_TILE);
+
+    for (sp74 = 0; sp74 < 2; sp74++) {
+        sp70 = &D_hd_code_802FA280[arg2][sp74];
+
+        gDPSetTile(entry++, sp78[sp74], G_IM_SIZ_16b, 8, sp74 << 8, sp74, 0, (sp70->unkB & 0x3), 5, sp74,
+                   (sp70->unkA & 0x3), 5, sp74);
+        gDPSetTileSize(entry++, sp74, 0, 0, qu102(31), qu102(31));
+    }
+
+    sp68 = (D_hd_code_8036BFC8 + 16.0f) / (f32) (1 << sp70->unk8);
+    sp60 = (f32) (319.0 / (f64) (f32) (1 << sp70->unk8));
+
+    // @recomp: adapt texture size in width
+    D_hd_code_802FA820[D_hd_code_8036BFC5][0].v.tc[0] = (sp68 - offset * 319) * 32.0;
+    D_hd_code_802FA820[D_hd_code_8036BFC5][1].v.tc[0] = (sp68 + sp60 + offset * 319) * 32.0;
+    D_hd_code_802FA820[D_hd_code_8036BFC5][2].v.tc[0] = (sp68 - offset * 319) * 32.0;
+    D_hd_code_802FA820[D_hd_code_8036BFC5][3].v.tc[0] = (sp68 + sp60 + offset * 319) * 32.0;
+
+    sp64 = ((D_hd_code_8036BFCC - D_hd_code_8036BFC0) - D_hd_code_8036BFD0) / (f32) (1 << sp70->unk9);
+    sp5C = (f32) (((f64) D_hd_code_8036BFCC - 1.0) / (f64) (f32) (1 << sp70->unk9));
+    D_hd_code_802FA820[D_hd_code_8036BFC5][0].v.tc[1] = sp64 * 32.0;
+    D_hd_code_802FA820[D_hd_code_8036BFC5][1].v.tc[1] = sp64 * 32.0;
+    D_hd_code_802FA820[D_hd_code_8036BFC5][2].v.tc[1] = (sp64 - sp5C) * 32.0;
+    D_hd_code_802FA820[D_hd_code_8036BFC5][3].v.tc[1] = (sp64 - sp5C) * 32.0;
+
+    gSPVertex(entry++, D_hd_code_802FA820[D_hd_code_8036BFC5], 4, 0);
+    gDPPipeSync(entry++);
+    gSP1Triangle(entry++, 0, 1, 2, 0);
+    gSP1Triangle(entry++, 1, 2, 3, 0);
+
+    D_hd_code_8036BFC5 ^= 1;
+    return entry;
+}
+
+JUMPTABLE_FIX

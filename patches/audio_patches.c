@@ -83,3 +83,5 @@ RECOMP_PATCH void amHandleFrameMessage(AudioInfo* info, AudioInfo* lastInfo) {
     }
     g_CurrentAcmdList ^= 1;
 }
+
+JUMPTABLE_FIX
