@@ -299,4 +299,6 @@ RECOMP_PATCH void gfxSubmitTask(Gfx* displayList, s32 displayListEntries, u8 arg
     osSendMesg(&sc.interruptQ, gfxTask, OS_MESG_BLOCK);
 }
 
-JUMPTABLE_FIX
+// Do not remove this. N64Recomp needs at least one global variable that is exposed in the .data
+// section. else it will crash
+int sJumptableFix = 1;

@@ -777,5 +777,3 @@ RECOMP_PATCH Gfx* func_hd_code_80271FD0(Gfx* arg0, struct Model1* arg1, u16 arg2
     D_hd_code_8036BFC5 ^= 1;
     return entry;
 }
-
-JUMPTABLE_FIX

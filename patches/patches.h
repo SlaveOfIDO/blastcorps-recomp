@@ -119,8 +119,4 @@ void set_all_interpolation_skipped(bool skipped);
 bool all_interpolation_skipped();
 bool perspective_interpolation_skipped();
 
-// Do not remove this. N64Recomp needs at least one global variable that is exposed in the .data
-// section. else it will crash
-#define JUMPTABLE_FIX static int sJumptableFix = 1;
-
 #endif
