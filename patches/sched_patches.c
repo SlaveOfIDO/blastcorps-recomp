@@ -53,6 +53,11 @@ typedef struct AudioManager_s {
 
 extern AudioManager g_AudioManager;
 
+// Do not remove this variable. N64Recomp needs at least one global variable that is exposed in the .data
+// section. else it will crash
+int sSchedJumptableFix = 1;
+
+
 static bool sGfxTaskPending = 0;
 
 // @recomp: osGetTime()/osGetCount() counts at 46875000 ticks/sec

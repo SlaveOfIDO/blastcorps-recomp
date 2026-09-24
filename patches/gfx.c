@@ -1,5 +1,6 @@
 #include "patches.h"
 #include "misc_funcs.h"
+#include "gfx_tagging.h"
 #include <PR/sched.h>
 #include <hd_code/macros.h>
 #include <hd_code/functions.h>
@@ -366,7 +367,7 @@ RECOMP_PATCH void func_hd_code_8024FC2C(Gfx** arg0, u8 arg1) {
             ((D_hd_code_80364460[sp60].unk5C == 0xFD) || (D_hd_code_80364A84 == 0) || (D_hd_code_80364AC1 == 0))) {
 
             // @recomp Tag the transform.
-            gEXMatrixGroupSimpleNormal(entry++, (u32) &D_hd_code_80364460[sp60] | arg1 << 24, G_EX_PUSH,
+            gEXMatrixGroupSimpleNormal(entry++, TAG_VEHICLE(D_hd_code_80364460, arg1), G_EX_PUSH,
                                        G_MTX_MODELVIEW, G_EX_EDIT_ALLOW);
 
             gSPSegment(entry++, 0x06, osVirtualToPhysical((void*) D_hd_code_80364460[sp60].unk0));
@@ -421,4 +422,124 @@ RECOMP_PATCH void func_hd_code_8024FC2C(Gfx** arg0, u8 arg1) {
         sp60++;
     }
     *arg0 = entry;
+}
+
+#define qu016(n) ((u16) ((n) * 0x10000))
+extern s32 D_hd_code_803F7660;
+extern u16 D_hd_code_802FCEB0[32 * 32];
+extern Vtx D_hd_code_802FD9B8[10];
+
+
+// @recomp: missile carrier arrow. wobbles in-game. This is fixed with tagging
+RECOMP_PATCH void func_hd_code_80282C80(Gfx** gfx, struct Model1* arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5, s32 arg6, s32 arg7) {
+    Gfx* entry = *gfx;
+    f32 sp130;
+    f32 sp12C;
+    u8 sp12B;
+    u8 sp12A;
+    s16 sp128;
+    f32 spE8[4][4];
+    f32 spA8[4][4];
+    s32 spA4;
+    s32 spA0;
+    u8 sp9F;
+
+    arg2 >>= 5;
+    arg3 >>= 5;
+    arg4 >>= 5;
+    arg5 >>= 5;
+    arg6 >>= 5;
+    arg7 >>= 5;
+
+    spA4 = D_hd_code_803F7670 >> 5;
+    spA0 = D_hd_code_803F7678 >> 5;
+    sp130 = sqrtf((((spA4 - arg2) * (spA4 - arg2)) + ((spA0 - arg4) * (spA0 - arg4))));
+    if (sp130 < 1.0) {
+        sp130 = 1.0f;
+    }
+    if ((spA4 >= arg2) && (spA0 >= arg4)) {
+        sp12C = (func_hd_code_802AD7D4((s32) (((spA4 - arg2) / sp130) * 65536.0)) >> 4);
+    }
+    if ((spA4 >= arg2) && (spA0 < arg4)) {
+        sp12C = ((func_hd_code_802AD7D4((s32) (((arg4 - spA0) / sp130) * 65536.0)) >> 4) + 0x400);
+    }
+    if ((spA4 < arg2) && (spA0 < arg4)) {
+        sp12C = ((func_hd_code_802AD7D4((s32) (((arg2 - spA4) / sp130) * 65536.0)) >> 4) + 0x800);
+    }
+    if ((spA4 < arg2) && (spA0 >= arg4)) {
+        sp12C = ((func_hd_code_802AD7D4((s32) (((spA0 - arg4) / sp130) * 65536.0)) >> 4) + 0xC00);
+    }
+    sp12C = (sp12C * 0.08791208791208792);
+    sp12C = ((360.0 - sp12C) - 45.0);
+    sp12C = (sp12C + (((D_hd_code_80364452 * 360.0) / 4095.0) - 135.0));
+    sp130 = sqrtf((((arg5 - spA4) * (arg5 - spA4)) + ((arg7 - spA0) * (arg7 - spA0))));
+    if (sp130 > 1500.0f) {
+        sp12A = 0xFF;
+        sp12B = 0;
+    } else if (sp130 < 500.0f) {
+        sp12B = 0xFF;
+        sp12A = 0;
+    } else {
+        sp128 = (s16) (s32) (((sp130 - 500.0f) / 1000.0f) * 511.0f);
+        if ((s16) sp128 < 0x100) {
+            sp12A = sp128, sp12B = 0xFF;
+        } else {
+            sp12A = 0xFF, sp12B = 0x1FE - sp128;
+        }
+    }
+    if (sp130 < 250.0f) {
+        sp9F = 1;
+    } else {
+        sp9F = 0;
+    }
+
+    if ((((D_hd_code_803156C4 % 30U) >= 0x10U) || (sp9F == 0)) && (D_hd_code_803F7660 != 0x98967F)) {
+        guAlignF(spE8, 20.0f, 1.0f, 0.0f, 0.0f);
+        guAlignF(spA8, -sp12C, 0.0f, 0.0f, 1.0f);
+        guMtxCatF(spE8, spA8, spE8);
+        guTranslateF(spA8, -150.0f, -230.0f, -800.0f);
+        guMtxCatF(spE8, spA8, spE8);
+        guMtxF2L(spE8, (Mtx*) arg1->unk1580);
+        // @recomp Tag the transform.
+        gEXMatrixGroupDecomposedNormal(entry++, TAG_MISSILE_ARROW, G_EX_PUSH, G_MTX_PROJECTION, G_EX_EDIT_ALLOW);
+
+        gSPMatrix(entry++, (u32) &D_2000000.projection, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+        gSPPerspNormalize(entry++, D_hd_code_8035807C);
+
+
+        gSPMatrix(entry++, D_2000000.unk1580, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPClearGeometryMode(entry++, G_ZBUFFER | G_TEXTURE_ENABLE | G_SHADE | G_CULL_BOTH | G_FOG | G_LIGHTING |
+                                          G_TEXTURE_GEN | G_TEXTURE_GEN_LINEAR | G_LOD | G_SHADING_SMOOTH | 0xFFE0CDF8);
+        gSPSetGeometryMode(entry++, G_SHADE | G_CULL_FRONT | G_LIGHTING | G_TEXTURE_GEN | G_SHADING_SMOOTH);
+        gDPPipeSync(entry++);
+        gDPSetCycleType(entry++, G_CYC_1CYCLE);
+
+        if (D_hd_code_80367BD6 == 0xFF) {
+            gDPSetRenderMode(entry++, G_RM_RA_OPA_SURF, G_RM_RA_OPA_SURF2);
+        } else {
+            gDPSetRenderMode(entry++, G_RM_AA_XLU_SURF, G_RM_AA_XLU_SURF2);
+        }
+        gDPSetCombineMode(entry++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
+
+        gDPSetPrimColor(entry++, 0, 0, sp12B, sp12A, 0, D_hd_code_80367BD6);
+        gSPTexture(entry++, qu016(0.03028), qu016(0.03028), 0, G_TX_RENDERTILE, G_ON);
+        gDPLoadTextureBlock(entry++, OS_PHYSICAL_TO_K0(&D_hd_code_802FCEB0), G_IM_FMT_RGBA, G_IM_SIZ_16b, 32, 32, 0,
+                            G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMASK, G_TX_NOMASK,
+                            G_TX_NOLOD, G_TX_NOLOD);
+        gSPVertex(entry++, osVirtualToPhysical(D_hd_code_802FD9B8), 10, 0);
+        gSP1Triangle(entry++, 0, 1, 2, 0);
+        gSP1Triangle(entry++, 0, 2, 3, 0);
+        gSP1Triangle(entry++, 3, 1, 0, 0);
+        gSP1Triangle(entry++, 1, 4, 2, 0);
+        gSP1Triangle(entry++, 4, 5, 2, 0);
+        gSP1Triangle(entry++, 5, 3, 2, 0);
+        gSP1Triangle(entry++, 6, 7, 8, 0);
+        gSP1Triangle(entry++, 9, 6, 8, 0);
+        gSP1Triangle(entry++, 7, 9, 8, 0);
+        gDPPipeSync(entry++);
+
+        // @recomp Pop the transform id.
+        gEXPopMatrixGroup(entry++, G_MTX_PROJECTION);
+    }
+    *gfx = entry;
 }
